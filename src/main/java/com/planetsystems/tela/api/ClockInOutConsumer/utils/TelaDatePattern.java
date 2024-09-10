@@ -1,0 +1,21 @@
+package com.planetsystems.tela.api.ClockInOutConsumer.utils;
+
+import java.time.DayOfWeek;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.function.Predicate;
+
+public interface TelaDatePattern {
+    DateTimeFormatter datePattern = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    DateTimeFormatter datePattern2 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    DateTimeFormatter dateTimePattern = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm:ss");
+    DateTimeFormatter timePattern = DateTimeFormatter.ofPattern("hh:mm:ss");
+    DateTimeFormatter HourMinutePattern = DateTimeFormatter.ofPattern("hh:mm");
+    DateTimeFormatter dateTimePattern24 = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+    DateTimeFormatter timePattern24 = DateTimeFormatter.ofPattern("HH:mm:ss");
+    DateTimeFormatter HourMinutePattern24 = DateTimeFormatter.ofPattern("HH:mm");
+
+    Predicate<LocalDate> NotWeekendPredicate = (weekendDate) -> !(weekendDate.getDayOfWeek().equals(DayOfWeek.SATURDAY) || weekendDate.getDayOfWeek().equals(DayOfWeek.SUNDAY));
+
+}
