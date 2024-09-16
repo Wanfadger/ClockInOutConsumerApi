@@ -1,6 +1,6 @@
 package com.planetsystems.tela.api.ClockInOutConsumer.model.enums;
 
-public enum FileStorageException {
+public enum Gender {
     MALE("Male"),FEMALE("Female"),OTHERS("Others");
 
     private String gender;
