@@ -3,119 +3,155 @@ package com.planetsystems.tela.api.ClockInOutConsumer.service.consumer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.planetsystems.tela.api.ClockInOutConsumer.dto.ClockInTableColumns;
+import com.planetsystems.tela.api.ClockInOutConsumer.Repository.ClockInRepository;
+import com.planetsystems.tela.api.ClockInOutConsumer.Repository.SchoolRepository;
+import com.planetsystems.tela.api.ClockInOutConsumer.Repository.projections.IdProjection;
+import com.planetsystems.tela.api.ClockInOutConsumer.dto.ClockInRequestDTO;
 import com.planetsystems.tela.api.ClockInOutConsumer.dto.MQResponseDto;
 import com.planetsystems.tela.api.ClockInOutConsumer.dto.ResponseType;
-import com.planetsystems.tela.api.ClockInOutConsumer.dto.SyncClockIn;
-import com.planetsystems.tela.api.ClockInOutConsumer.dto.enums.ClockedStatus;
-import com.planetsystems.tela.api.ClockInOutConsumer.utils.queries.ClockInQueryString;
+import com.planetsystems.tela.api.ClockInOutConsumer.model.AcademicTerm;
+import com.planetsystems.tela.api.ClockInOutConsumer.model.ClockIn;
+import com.planetsystems.tela.api.ClockInOutConsumer.model.School;
+import com.planetsystems.tela.api.ClockInOutConsumer.model.SchoolStaff;
+import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.ClockedStatus;
+import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.Status;
+import com.planetsystems.tela.api.ClockInOutConsumer.utils.TelaDatePattern;
+import jakarta.jms.Session;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bouncycastle.cms.PasswordRecipientId;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class ClockInConsumerImpl {
 
-    private final JdbcTemplate jdbcTemplate;
-    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     private final JmsTemplate jmsTemplate;
-
+    private final ClockInRepository clockInRepository;
+    private final SchoolRepository schoolRepository;
 
     private final ObjectMapper objectMapper;
 
+
     @JmsListener(destination = "${queue.clockins}")
-          @Transactional
-          public void subscribeClockIns(String clockIns) throws JsonProcessingException {
-        List<SyncClockIn> dtos = objectMapper.readValue(clockIns, new TypeReference<>() {
+    @Transactional
+    public void subscribeClockIns(String clockIns) throws JsonProcessingException {
+        List<ClockInRequestDTO> dtos = objectMapper.readValue(clockIns, new TypeReference<>() {
         });
 
-        log.info("subscribeClockIn {}" , dtos);
+//        log.info("subscribeClockIn {}", dtos);
     }
 
 
-    @JmsListener(destination = "${queue.clockin}")
+    @JmsListener(destination = "${queue.clockin}" )
     @Transactional
     public void subscribeClockIn(String clockInString) throws JsonProcessingException {
-        SyncClockIn dto = objectMapper.readValue(clockInString, new TypeReference<>() {
+        ClockInRequestDTO dto = objectMapper.readValue(clockInString, new TypeReference<>() {
         });
 
-
-
-//        String NationalClockInBetweenDatesSQL = """
-//            SELECT   C."clockInDate" , C."clockInTime" , C."clockinType" AS clockInType  , D.name AS districtName , D.id AS districtId
-//            FROM "ClockIns" AS C
-//                     INNER JOIN "Schools" S on S.id = C.school_id
-//                     INNER JOIN "Districts" D on D.id = S.district_id
-//                     WHERE C.status <> 8 AND S.status <> 8 AND D.status <> 8
-//                       AND C."clockInDate" BETWEEN ?::DATE AND ?::DATE AND S."schoolOwnership" = ?
-//            """;
-
-        // todo check if clock exits then save
-
-        // todo save to db
-        ClockInTableColumns clockIn = ClockInTableColumns.builder()
-                .displacement(dto.getDisplacement())
-                .academicTerm_id(dto.getAcademicTermId())
-                .build();
-        SqlParameterSource parameters = new BeanPropertySqlParameterSource(clockIn);
+        Optional<IdProjection> optionalSchoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(dto.getTelaSchoolNumber() , Status.DELETED);
 
 
 
-        int update = namedParameterJdbcTemplate.update(ClockInQueryString.INSERT_CLOCKIN_QUERY, parameters);
-        log.info("subscribeClockIn {}" , dto);
-        publishSchoolClockIns(dto);
+        if (optionalSchoolIdProjection.isPresent()) {
+            LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
+            IdProjection schoolIdProjection = optionalSchoolIdProjection.get();
+
+            if (!clockInRepository.existsByStatusNotAndClockInDateAndSchoolStaff_Id(Status.DELETED , clockInDateTime.toLocalDate() , dto.getStaffId())) {
+                ClockIn clockIn = ClockIn.builder()
+                        .clockedStatus(ClockedStatus.CLOCKED_IN)
+                        .clockInDate(clockInDateTime.toLocalDate())
+                        .clockInTime(clockInDateTime.toLocalTime())
+                        .academicTerm(new AcademicTerm(dto.getAcademicTermId()))
+                        .school(new School(schoolIdProjection.getId()))
+                        .schoolStaff(new SchoolStaff(dto.getStaffId()))
+                        .comment("")
+                        .clockinType(dto.getClockInType())
+                        .displacement(dto.getDisplacement())
+                        .latitude(dto.getLatitude())
+                        .longitude(dto.getLongitude())
+                        .status(Status.ACTIVE)
+                        .build();
+
+                log.info("CLOCKIN TO BE SAVED {}  " , dto);
+                log.info("TELA NO {}  " , dto.getTelaSchoolNumber());
+
+                clockInRepository.save(clockIn);
+
+                publishSchoolClockIn(dto);
+            }else{
+                log.info("ALREADY CLOCKED IN");
+            }
+
+        }
     }
 
 
     @Async
-    public void publishSchoolClockIns(SyncClockIn dto){
-      try {
-          // todo get school by tela number
-
-
-
-          // get clockIns by tela number
-          List<SyncClockIn> clockIns = List.of(dto);
-          jmsTemplate.setPubSubDomain(true);
-
-
-          MQResponseDto<List<SyncClockIn>> responseDto = new MQResponseDto<>();
-          responseDto.setResponseType(ResponseType.CLOCKINS);
-          responseDto.setData(clockIns);
-          jmsTemplate.convertAndSend(dto.getTelaSchoolNumber()  ,objectMapper.writeValueAsString(responseDto));
-      }catch (Exception e){
-          e.printStackTrace();
-          System.out.println(e);
-      }
-
-
+    public void publishSchoolClockIn(ClockInRequestDTO dto) {
+        try {
+            log.info("PUBLISHING SCHOOL CLOCk IN TO {} " , dto.getTelaSchoolNumber());
+            jmsTemplate.setPubSubDomain(true);
+            jmsTemplate.setSessionAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
+            MQResponseDto<ClockInRequestDTO> responseDto = new MQResponseDto<>();
+            responseDto.setResponseType(ResponseType.CLOCKIN);
+            responseDto.setData(dto);
+            jmsTemplate.convertAndSend(dto.getTelaSchoolNumber(), objectMapper.writeValueAsString(responseDto));
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e);
+        }
     }
 
-    /*
-     List<DistrictClockInOutProjection> districtClockInOutProjectionList = jdbcTemplate.queryForStream(DistrictQueryString.DistrictClockInClockOutBetweenDatesSQL, (rs, rowNum) ->
-                        new DistrictClockInOutProjection(rs.getDate("clockInDate").toLocalDate(), rs.getTime("clockInTime").toLocalTime(), rs.getTime("clockOutTime").toLocalTime(),
-                                rs.getString("clockInType"), rs.getString("schoolId"), rs.getString("staffId")), localGovernment, yearTermDate.startDate(), yearTermDate.endDate())
-                .filter(nCOP -> termPublicHolidayDtoList.stream().noneMatch(publicHoliday -> (nCOP.clockInDate().equals(publicHoliday.date())))) // exclude public holidays
-                .filter(nCOP -> !(nCOP.clockInDate().getDayOfWeek().equals(DayOfWeek.SATURDAY) || nCOP.clockInDate().getDayOfWeek().equals(DayOfWeek.SUNDAY))) // exclude weekends
-                .toList();
 
-     */
+
+//    @JmsListener(destination = "8008226193412" , containerFactory = "topicConnectionFactory")
+//    @Transactional
+//    public void subscribeSchoolClockIn(String clockInString) throws JsonProcessingException {
+//
+//        log.info("8008226193412 subscribeSchoolClockIn 1  {} ", clockInString);
+//
+//
+//    }
+
+//    @JmsListener(destination = "8008226193412" , containerFactory = "topicConnectionFactory")
+//    @Transactional
+//    public void subscribeSchoolClockIn22(String clockInString) throws JsonProcessingException {
+//
+//        log.info("80082259624390 subscribeSchoolClockIn 2  {} ", clockInString);
+//
+//
+//    }
+//
+//    @JmsListener(destination = "800822596243901" , containerFactory = "topicConnectionFactory")
+//    @Transactional
+//    public void subscribeSchoolClockIn2(String clockInString) throws JsonProcessingException {
+//
+//        log.info("800822596243901 subscribeSchoolClockIn 1 {} ", clockInString);
+//
+//
+//    }
+//
+//
+//    @JmsListener(destination = "800822596243901" , containerFactory = "topicConnectionFactory")
+//    @Transactional
+//    public void subscribeSchoolClockIn3(String clockInString) throws JsonProcessingException {
+//
+//        log.info(" 800822596243901 subscribeSchoolClockIn 2 {} ", clockInString);
+//
+//
+//    }
+
+
+
 
 
 }
