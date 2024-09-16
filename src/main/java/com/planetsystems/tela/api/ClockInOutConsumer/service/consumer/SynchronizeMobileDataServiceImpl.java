@@ -328,14 +328,14 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
 
         SchoolLevel schoolLevel = school.getSchoolLevel();
         SubjectClassification subjectClassification = SubjectClassification.getSubjectClassification(schoolLevel.getLevel());
-        List<IdNameDTO> subjectDTOS = subjectRepository.findAllBySubjectClassificationNotNullAndStatusNotAndSubjectClassification(Status.DELETED, subjectClassification)
-                .parallelStream().map(subject -> new IdNameDTO(subject.getId(), subject.getName()))
-                .sorted(Comparator.comparing(IdNameDTO::name))
+        List<IdNameCodeDTO> subjectDTOS = subjectRepository.findAllBySubjectClassificationNotNullAndStatusNotAndSubjectClassification(Status.DELETED, subjectClassification)
+                .parallelStream().map(subject -> new IdNameCodeDTO(subject.getId(), subject.getName() , subject.getCode()))
+                .sorted(Comparator.comparing(IdNameCodeDTO::code))
                 .toList();
 
         try {
             jmsTemplate.setPubSubDomain(true);
-            MQResponseDto<List<IdNameDTO>> responseDto = new MQResponseDto<>();
+            MQResponseDto<List<IdNameCodeDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.SUBJECTS);
             responseDto.setData(subjectDTOS);
             jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
