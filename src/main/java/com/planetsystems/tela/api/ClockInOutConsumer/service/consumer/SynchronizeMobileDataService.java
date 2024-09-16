@@ -10,6 +10,7 @@ public interface SynchronizeMobileDataService {
     void publishSchoolClasses(School school, AcademicTerm academicTerm);
     void publishSchoolStaffs(School school, AcademicTerm academicTerm);
     void publishSchoolClockIns(School school, AcademicTerm academicTerm);
+    void publishSubjects(School school, AcademicTerm academicTerm);
 
 
 
