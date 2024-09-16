@@ -1,8 +1,6 @@
 package com.planetsystems.tela.api.ClockInOutConsumer.dto;
 
 import lombok.*;
-import lombok.experimental.Accessors;
-import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
 
@@ -11,6 +9,6 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MQResponseDto<T> implements Serializable {
-	ResponseType responseType;
+	ResponseType ResponseType;
 	T data;
 }
