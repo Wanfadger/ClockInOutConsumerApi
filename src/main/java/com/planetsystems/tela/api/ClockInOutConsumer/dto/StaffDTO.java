@@ -34,5 +34,4 @@ public class StaffDTO {
     private String staffType;
 
     private int expectedHours; // expected number of hours per week
-    private int expectedDays; // expect
 }
