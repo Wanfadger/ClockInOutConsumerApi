@@ -8,6 +8,11 @@ public interface ClockInQueryString {
                 VALUES (:status ,:clockInDate ,:clockInTime ,:clockedStatus ,:comment ,:latitude ,:longitude ,:academicTerm_id , :school_id ,:schoolStaff_id ,:clockinType ,:displacement)
                 """;
 
+
+    String INSERT_REGION_QUERY = """
+               INSERT INTO "Regions" (status , "name" , code ) VALUES (? , ? ,?)
+                """;
+
     String AllClockInsBetween = """
             SELECT C.id AS clockInId , C."academicTerm_id" AS termId , C.school_id AS schoolId , C."schoolStaff_id" AS staffId  ,
                    C."clockInDate" , C."clockInTime" , C.longitude , C.latitude , C.comment , C."clockinType" , C.displacement
