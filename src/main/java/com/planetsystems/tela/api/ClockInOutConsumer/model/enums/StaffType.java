@@ -1,18 +1,16 @@
-package com.planetsystems.tela.api.ClockInOutConsumer.dto.enums;
+package com.planetsystems.tela.api.ClockInOutConsumer.model.enums;
 
 public enum StaffType {
 
-	TEACHER("Teacher"),
-	HEADTEACHER("Head teacher"),
-	DEPUTY_HEADTEACHER("Deputy head teacher"),
-    SMC("Smc"),
-    PRINCIPAL("Principal"),
-    BURSAR("Bursar"),
-    LIBRARIAN("Librarian"),
-    LAB_TECH("Lab technician"),
-    OTHERS("Others"),
-  //added for staff transfer authorization
-  	SUPPORT("Support Staff");//9
+	TEACHER("Teacher"),//0
+	HEADTEACHER("Head teacher"),//1
+	DEPUTY_HEADTEACHER("Deputy head teacher"),//2
+    SMC("Smc"),//3
+    PRINCIPAL("Principal"),//4
+    BURSAR("Bursar"),//5
+    LIBRARIAN("Librarian"),//6
+    LAB_TECH("Lab technician"),//7
+    OTHERS("Others");//8
 
 	private String type;
 
@@ -38,4 +36,3 @@ public enum StaffType {
 	}
 
 }
-
