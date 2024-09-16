@@ -1,5 +1,4 @@
-package com.planetsystems.tela.api.ClockInOutConsumer.dto.enums;
-
+package com.planetsystems.tela.api.ClockInOutConsumer.model.enums;
 
 public enum ConfigRole {
 
