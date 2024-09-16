@@ -8,7 +8,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Getter
 public enum ResponseType implements Serializable {
-    SCHOOL("SCHOOL"),CLASSES("CLASSES"),STAFFS("STAFFS"),CLOCKINS("CLOCKINS"), CLOCKIN("CLOCKIN");
+    SCHOOL("SCHOOL"),CLASSES("CLASSES"),STAFFS("STAFFS"),CLOCKINS("CLOCKINS"), CLOCKIN("CLOCKIN"), SUBJECTS("SUBJECTS");
 
         String type;
 }
