@@ -1,4 +1,4 @@
-package com.planetsystems.tela.api.ClockInOutConsumer.dto.enums;
+package com.planetsystems.tela.api.ClockInOutConsumer.model.enums;
 
 public enum DatePattern {
     DAY_MONTH_YEAR("dd/MM/yyyy"),	//31-01-2012
