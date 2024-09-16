@@ -1,7 +1,7 @@
-package com.planetsystems.tela.api.ClockInOutConsumer.dto.enums;
+package com.planetsystems.tela.api.ClockInOutConsumer.model.enums;
 
-public enum Gender {
-    MALE("Male"),FEMALE("Female");//,OTHERS("Others");
+public enum FileStorageException {
+    MALE("Male"),FEMALE("Female"),OTHERS("Others");
 
     private String gender;
 
