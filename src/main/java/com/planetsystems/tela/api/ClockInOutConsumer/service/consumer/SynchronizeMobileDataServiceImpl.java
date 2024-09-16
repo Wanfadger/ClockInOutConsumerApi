@@ -37,6 +37,8 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
     final ClockInRepository clockInRepository;
 
     final SubjectRepository subjectRepository;
+    final LearnerEnrollmentRepository learnerEnrollmentRepository;
+    final SNLearnerEnrollmentRepository snLearnerEnrollmentRepository;
 
 
     final JmsTemplate jmsTemplate;
@@ -324,6 +326,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
     }
 
     @Override
+    @Async
     public void publishSubjects(School school, AcademicTerm academicTerm) {
 
         SchoolLevel schoolLevel = school.getSchoolLevel();
@@ -338,6 +341,44 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
             MQResponseDto<List<IdNameCodeDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.SUBJECTS);
             responseDto.setData(subjectDTOS);
+            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e);
+        }
+
+    }
+
+    @Override
+    @Async
+    public void publishLearnerEnrollments(School school, AcademicTerm academicTerm) {
+
+        List<SNLearnerEnrollment> snLearnerEnrollments = snLearnerEnrollmentRepository.allBySchool_term(school.getId(), academicTerm.getId());
+
+        List<LearnerHeadCountDTO> learnerHeadCountDTOS = learnerEnrollmentRepository.allBySchool_term(school.getId(), academicTerm.getId()).parallelStream()
+                .map(enrollment -> {
+                    LearnerHeadCountDTO learnerHeadCountDTO = LearnerHeadCountDTO.builder()
+
+                    .submissionDate(enrollment.getSubmissionDate().format(TelaDatePattern.datePattern))
+                    .general(new GenderCountDTO(enrollment.getTotalBoys(), enrollment.getTotalGirls()))
+                    .schoolClass(new IdNameDTO(enrollment.getSchoolClass().getId(), enrollment.getSchoolClass().getName()))
+                    .build();
+
+                    Optional<SNLearnerEnrollment> optionalSNLearnerEnrollment = snLearnerEnrollments.parallelStream().filter(snEnrollment -> snEnrollment.getSchoolClass().getId().equals(enrollment.getSchoolClass().getId())).findFirst();
+
+                    if (optionalSNLearnerEnrollment.isPresent()) {
+                        SNLearnerEnrollment snLearnerEnrollment = optionalSNLearnerEnrollment.get();
+                        learnerHeadCountDTO.setSpecialNeeds(new GenderCountDTO(snLearnerEnrollment.getTotalBoys() , snLearnerEnrollment.getTotalGirls()));
+                    }
+            return learnerHeadCountDTO;
+        }).sorted(Comparator.comparing(learnerHeadCountDTO -> learnerHeadCountDTO.getSchoolClass().name())).toList();
+
+
+        try {
+            jmsTemplate.setPubSubDomain(true);
+            MQResponseDto<List<LearnerHeadCountDTO>> responseDto = new MQResponseDto<>();
+            responseDto.setResponseType(ResponseType.LEARNER_HEADCOUNTS);
+            responseDto.setData(learnerHeadCountDTOS);
             jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
         } catch (Exception e) {
             e.printStackTrace();
