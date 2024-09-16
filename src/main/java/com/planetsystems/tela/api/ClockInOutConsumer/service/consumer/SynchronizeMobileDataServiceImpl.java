@@ -5,11 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.planetsystems.tela.api.ClockInOutConsumer.Repository.*;
 import com.planetsystems.tela.api.ClockInOutConsumer.Repository.projections.IdProjection;
 import com.planetsystems.tela.api.ClockInOutConsumer.dto.*;
-import com.planetsystems.tela.api.ClockInOutConsumer.model.AcademicTerm;
-import com.planetsystems.tela.api.ClockInOutConsumer.model.ClockIn;
-import com.planetsystems.tela.api.ClockInOutConsumer.model.GeneralUserDetail;
-import com.planetsystems.tela.api.ClockInOutConsumer.model.School;
+import com.planetsystems.tela.api.ClockInOutConsumer.model.*;
+import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.SchoolLevel;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.Status;
+import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.SubjectClassification;
 import com.planetsystems.tela.api.ClockInOutConsumer.utils.TelaDatePattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +35,10 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
 
     private final SchoolStaffRepository schoolStaffRepository;
     final ClockInRepository clockInRepository;
+
+    final SubjectRepository subjectRepository;
+
+
     final JmsTemplate jmsTemplate;
     final ObjectMapper objectMapper;
 
@@ -69,9 +72,16 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
 //                // clockins
                 publishSchoolClockIns(school, academicTerm);
 
+//                subjects
+                publishSubjects(school, academicTerm);
+
+
+
             }
         }
     }
+
+
 
     @Override
     @Async
@@ -305,6 +315,29 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
             MQResponseDto<List<ClockInRequestDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.CLOCKINS);
             responseDto.setData(clockInRequestDTOS);
+            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e);
+        }
+
+    }
+
+    @Override
+    public void publishSubjects(School school, AcademicTerm academicTerm) {
+
+        SchoolLevel schoolLevel = school.getSchoolLevel();
+        SubjectClassification subjectClassification = SubjectClassification.getSubjectClassification(schoolLevel.getLevel());
+        List<IdNameDTO> subjectDTOS = subjectRepository.findAllBySubjectClassificationNotNullAndStatusNotAndSubjectClassification(Status.DELETED, subjectClassification)
+                .parallelStream().map(subject -> new IdNameDTO(subject.getId(), subject.getName()))
+                .sorted(Comparator.comparing(IdNameDTO::name))
+                .toList();
+
+        try {
+            jmsTemplate.setPubSubDomain(true);
+            MQResponseDto<List<IdNameDTO>> responseDto = new MQResponseDto<>();
+            responseDto.setResponseType(ResponseType.SUBJECTS);
+            responseDto.setData(subjectDTOS);
             jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
         } catch (Exception e) {
             e.printStackTrace();
