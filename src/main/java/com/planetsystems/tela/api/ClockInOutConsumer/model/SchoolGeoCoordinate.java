@@ -14,7 +14,7 @@ import java.util.*;
 @Table(uniqueConstraints = {@UniqueConstraint(name = "school", columnNames = {"school_id"})})
 public class SchoolGeoCoordinate extends ParentEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY , targetEntity = School.class)
     private School school;
     private double longtitude;
     private double latitude;
