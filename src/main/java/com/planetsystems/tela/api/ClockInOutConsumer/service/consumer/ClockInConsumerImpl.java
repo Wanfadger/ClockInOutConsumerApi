@@ -44,10 +44,51 @@ public class ClockInConsumerImpl {
     @JmsListener(destination = "${queue.clockins}")
     @Transactional
     public void subscribeClockIns(String clockIns) throws JsonProcessingException {
-        List<ClockInRequestDTO> dtos = objectMapper.readValue(clockIns, new TypeReference<>() {
+        List<ClockInRequestDTO> dtoList = objectMapper.readValue(clockIns, new TypeReference<>() {
         });
 
-//        log.info("subscribeClockIn {}", dtos);
+        log.info("CLOCKINS {} {} " , dtoList.size() , dtoList);
+
+        dtoList.parallelStream().filter(dto -> {
+            LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
+            boolean alreadyExists = !clockInRepository.existsByStatusNotAndClockInDateAndSchoolStaff_Id(Status.DELETED, clockInDateTime.toLocalDate(), dto.getStaffId());
+            if (alreadyExists){
+                log.info("alreadyExists {} ", dto);
+                publishSchoolClockIn(dto);
+            }
+            return alreadyExists;
+        }).forEach(dto -> {
+            LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
+            Optional<IdProjection> optionalSchoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(dto.getTelaSchoolNumber() , Status.DELETED);
+
+            if (optionalSchoolIdProjection.isPresent()) {
+                IdProjection schoolIdProjection = optionalSchoolIdProjection.get();
+                ClockIn clockIn = toClockIn(dto, clockInDateTime, schoolIdProjection);
+
+                log.info("CLOCKIN TO BE SAVED {}  " , dto);
+                log.info("TELA NO {}  " , dto.getTelaSchoolNumber());
+
+                clockInRepository.save(clockIn);
+                publishSchoolClockIn(dto);
+            }
+        });
+    }
+
+    private  ClockIn toClockIn(ClockInRequestDTO dto, LocalDateTime clockInDateTime, IdProjection schoolIdProjection) {
+        return ClockIn.builder()
+                .clockedStatus(ClockedStatus.CLOCKED_IN)
+                .clockInDate(clockInDateTime.toLocalDate())
+                .clockInTime(clockInDateTime.toLocalTime())
+                .academicTerm(new AcademicTerm(dto.getAcademicTermId()))
+                .school(new School(schoolIdProjection.getId()))
+                .schoolStaff(new SchoolStaff(dto.getStaffId()))
+                .comment("")
+                .clockinType(dto.getClockInType())
+                .displacement(dto.getDisplacement())
+                .latitude(dto.getLatitude())
+                .longitude(dto.getLongitude())
+                .status(Status.ACTIVE)
+                .build();
     }
 
 
@@ -57,27 +98,15 @@ public class ClockInConsumerImpl {
         ClockInRequestDTO dto = objectMapper.readValue(clockInString, new TypeReference<>() {
         });
 
-        Optional<IdProjection> optionalSchoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(dto.getTelaSchoolNumber() , Status.DELETED);
+        LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
 
-        if (optionalSchoolIdProjection.isPresent()) {
-            LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
-            IdProjection schoolIdProjection = optionalSchoolIdProjection.get();
+        if (!clockInRepository.existsByStatusNotAndClockInDateAndSchoolStaff_Id(Status.DELETED , clockInDateTime.toLocalDate() , dto.getStaffId())) {
 
-            if (!clockInRepository.existsByStatusNotAndClockInDateAndSchoolStaff_Id(Status.DELETED , clockInDateTime.toLocalDate() , dto.getStaffId())) {
-                ClockIn clockIn = ClockIn.builder()
-                        .clockedStatus(ClockedStatus.CLOCKED_IN)
-                        .clockInDate(clockInDateTime.toLocalDate())
-                        .clockInTime(clockInDateTime.toLocalTime())
-                        .academicTerm(new AcademicTerm(dto.getAcademicTermId()))
-                        .school(new School(schoolIdProjection.getId()))
-                        .schoolStaff(new SchoolStaff(dto.getStaffId()))
-                        .comment("")
-                        .clockinType(dto.getClockInType())
-                        .displacement(dto.getDisplacement())
-                        .latitude(dto.getLatitude())
-                        .longitude(dto.getLongitude())
-                        .status(Status.ACTIVE)
-                        .build();
+            Optional<IdProjection> optionalSchoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(dto.getTelaSchoolNumber() , Status.DELETED);
+
+            if (optionalSchoolIdProjection.isPresent()) {
+                IdProjection schoolIdProjection = optionalSchoolIdProjection.get();
+                ClockIn clockIn = toClockIn(dto, clockInDateTime, schoolIdProjection);
 
                 log.info("CLOCKIN TO BE SAVED {}  " , dto);
                 log.info("TELA NO {}  " , dto.getTelaSchoolNumber());
@@ -85,11 +114,16 @@ public class ClockInConsumerImpl {
                 clockInRepository.save(clockIn);
 
                 publishSchoolClockIn(dto);
-            }else{
-                log.info("ALREADY CLOCKED IN");
             }
 
+        }else{
+            log.info("ALREADY CLOCKED IN");
         }
+
+
+
+
+
     }
 
 
