@@ -35,6 +35,8 @@ public class ClockInOutConsumerApplication implements CommandLineRunner {
 	final SubjectRepository subjectRepository;
 	final LearnerEnrollmentRepository learnerEnrollmentRepository;
 	final SNLearnerEnrollmentRepository snLearnerEnrollmentRepository;
+	final LearnerAttendanceRepository learnerAttendanceRepository;
+	final SNLearnerAttendanceRepository snLearnerAttendanceRepository;
 
 	public static void main(String[] args) {
 		SpringApplication.run(ClockInOutConsumerApplication.class, args);
@@ -64,17 +66,32 @@ public class ClockInOutConsumerApplication implements CommandLineRunner {
 			log.info("school {} " , school.getId());
 			log.info("academicTerm {} " , academicTerm.getId());
 			SchoolLevel schoolLevel = school.getSchoolLevel();
-			SubjectClassification subjectClassification = SubjectClassification.getSubjectClassification(schoolLevel.getLevel());
+//			SubjectClassification subjectClassification = SubjectClassification.getSubjectClassification(schoolLevel.getLevel());
 //			clockInRepository.allClockByDate_SchoolWithStaff(LocalDate.now(), schoolIdProjection.getId());
 //			List<Subject> subjects = subjectRepository.findAllBySubjectClassificationNotNullAndStatusNotAndSubjectClassification(Status.DELETED, subjectClassification);
 //			log.info("SUBJECTS {} " , subjects.size());
 //			log.info("slclc {} " , subjectClassification.getSubjectClassification());
 
-			List<LearnerEnrollment> learnerEnrollments = learnerEnrollmentRepository.allBySchool_term("2c92808282d44b4a0182d495066821d8", "8a8089aa8fa5e464018fae49dac500ce");
-			log.info("learnerEnrollments {} "  ,learnerEnrollments.size());
+//			List<LearnerEnrollment> learnerEnrollments = learnerEnrollmentRepository.allBySchool_term("2c92808282d44b4a0182d495066821d8", "8a8089aa8fa5e464018fae49dac500ce");
+//			log.info("learnerEnrollments {} "  ,learnerEnrollments.size());
+//
+//			List<SNLearnerEnrollment> slearnerEnrollments = snLearnerEnrollmentRepository.allBySchool_term("2c92808282d44b4a0182d495066821d8", "8a8089aa8fa5e464018fae49dac500ce");
+//			log.info("SlearnerEnrollments {} "  ,slearnerEnrollments.size());
 
-			List<SNLearnerEnrollment> slearnerEnrollments = snLearnerEnrollmentRepository.allBySchool_term("2c92808282d44b4a0182d495066821d8", "8a8089aa8fa5e464018fae49dac500ce");
-			log.info("SlearnerEnrollments {} "  ,slearnerEnrollments.size());
+			List<LearnerAttendance> learnerAttendances = learnerAttendanceRepository.allByTerm_School("8a8089aa8fa5e464018fae49dac500ce", "2c92808282d44b4a0182d492cc730818");
+				log.info("learnerAttendances {} "  ,learnerAttendances.size());
+
+//			List<LearnerAttendance> DATElearnerAttendances = learnerAttendanceRepository.allByDate_School(LocalDate.of(2024 , 8 , 06), "2c92808282d44b4a0182d492cc730818");
+//			log.info("learnerAttendances DTE {} "  ,DATElearnerAttendances.size());
+
+
+//			List<LearnerAttendance> slearnerAttendances = snLearnerAttendanceRepository.allByTerm_School("8a8089b191dfdd700191dfe76bc80018", "2c92808282d44b4a0182d492cc730818");
+//			log.info("slearnerAttendances {} ", slearnerAttendances.size());
+//
+//			List<LearnerAttendance> sDATElearnerAttendances = snLearnerAttendanceRepository.allByDate_School(LocalDate.of(2024, 8, 06), "2c92808282d44b4a0182d492cc730818");
+//			log.info("slearnerAttendances DTE {} ", sDATElearnerAttendances.size());
+
+
 		}
 
 
