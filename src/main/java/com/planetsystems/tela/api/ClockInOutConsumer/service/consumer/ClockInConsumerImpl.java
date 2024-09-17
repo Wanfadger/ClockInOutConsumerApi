@@ -59,8 +59,6 @@ public class ClockInConsumerImpl {
 
         Optional<IdProjection> optionalSchoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(dto.getTelaSchoolNumber() , Status.DELETED);
 
-
-
         if (optionalSchoolIdProjection.isPresent()) {
             LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
             IdProjection schoolIdProjection = optionalSchoolIdProjection.get();
