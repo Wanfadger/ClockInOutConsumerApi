@@ -15,6 +15,7 @@ public interface SchoolRepository extends JpaRepository<School, String> {
     @Query(value = """
      SELECT S FROM School AS S
      JOIN FETCH S.district
+     LEFT JOIN S.schoolGeoCoordinateList AS SG
      WHERE S.status <> :status AND S.id= :id
 """)
     Optional<School> findByStatusNotAndId(Status status, String id);
