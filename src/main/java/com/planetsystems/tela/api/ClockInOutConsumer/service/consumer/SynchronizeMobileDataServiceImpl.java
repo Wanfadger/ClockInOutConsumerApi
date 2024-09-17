@@ -42,7 +42,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
     final SNLearnerEnrollmentRepository snLearnerEnrollmentRepository;
     final LearnerAttendanceRepository learnerAttendanceRepository;
     final SNLearnerAttendanceRepository snLearnerAttendanceRepository;
-
+    final DistrictRepository districtRepository;
 
     final JmsTemplate jmsTemplate;
     final ObjectMapper objectMapper;
@@ -93,6 +93,9 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
 
                   //publishLearnerAttendance
                   publishLearnerAttendance(school, academicTerm , dateParam);
+
+                  //publishDistricts
+                  publishDistricts(school);
 
               }
           }
@@ -339,7 +342,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                             .academicTermId(academicTerm.getId())
                             .longitude(clockIn.getLongitude())
                             .latitude(clockIn.getLatitude())
-                            .telaSchoolNumber(school.getTelaSchoolNumber())
+                            .telaSchoolNumber(school.getTelaSchoolUID())
                             .build();
 
                     return clockInRequestDTO;
@@ -483,6 +486,26 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
             System.out.println(e);
         }
 
+    }
+
+    @Override
+    public void publishDistricts(School school) {
+        List<DistrictDTO> districtDTOS = districtRepository.findAllByStatusNot(Status.DELETED)
+                .parallelStream()
+                .map(district -> new DistrictDTO(district.getId(), district.getName(), district.getRegion().getName()))
+                .sorted(Comparator.comparing(DistrictDTO::name))
+                .toList();
+
+        try {
+            jmsTemplate.setPubSubDomain(true);
+            MQResponseDto<List<DistrictDTO>> responseDto = new MQResponseDto<>();
+            responseDto.setResponseType(ResponseType.DISTRICTS);
+            responseDto.setData(districtDTOS);
+            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e);
+        }
     }
 
 
