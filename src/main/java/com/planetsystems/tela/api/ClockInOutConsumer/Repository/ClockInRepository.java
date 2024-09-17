@@ -21,6 +21,15 @@ public interface ClockInRepository extends JpaRepository<ClockIn, String> {
             """)
     List<ClockIn> allClockByDate_SchoolWithStaff(LocalDate clockInDate, String schoolId);
 
+    @Query(value = """
+            SELECT CL FROM ClockIns AS CL 
+            JOIN FETCH CL.schoolStaff AS ST
+            JOIN FETCH ST.generalUserDetail AS GD
+            WHERE CL.status <> 8 AND ST.status <> 8 AND GD.status <> 8
+            AND CL.academicTerm.id =:termId AND CL.school.id =:schoolId
+            """)
+    List<ClockIn> allClockByTerm_SchoolWithStaff(String termId, String schoolId);
+
     boolean existsByStatusNotAndClockInDateAndSchoolStaff_Id(Status status , LocalDate clockInDate , String staffId);
 
 //
