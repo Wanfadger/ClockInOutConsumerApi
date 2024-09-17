@@ -5,11 +5,33 @@ import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.*;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.*;
+
 import java.time.*;
 import java.util.*;
 
 @Repository
 public interface LearnerAttendanceRepository extends JpaRepository<LearnerAttendance, String> {
+
+
+    @Query(value = """
+            SELECT LA FROM LearnerAttendances  AS LA
+            JOIN FETCH LA.schoolClass AS SC
+            WHERE LA.status <> 8 AND SC.status <> 8 
+            AND LA.academicTerm.id =:termId AND SC.school.id =:schoolId
+            """)
+    List<LearnerAttendance> allByTerm_School(String termId, String schoolId);
+
+
+    @Query(value = """
+            SELECT LA FROM LearnerAttendances  AS LA
+            JOIN FETCH LA.schoolClass AS SC
+            WHERE LA.status <> 8 AND SC.status <> 8 
+            AND LA.attendanceDate =:attendanceDate AND SC.school.id =:schoolId
+            """)
+    List<LearnerAttendance> allByDate_School(LocalDate attendanceDate, String schoolId);
+
+
+
 
 //    @EntityGraph(value = "learnerAttendance-with-staffDetails-graph", type = EntityGraph.EntityGraphType.FETCH)
 //    List<LearnerAttendance> findAllByStatusNot(Status status);
