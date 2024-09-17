@@ -14,6 +14,7 @@ public interface SynchronizeMobileDataService {
     void publishSubjects(School school, AcademicTerm academicTerm);
     void publishLearnerEnrollments(School school, AcademicTerm academicTerm);
     void publishLearnerAttendance(School school, AcademicTerm academicTerm , String dateParam);
+    void publishDistricts(School school);
 
 
 
