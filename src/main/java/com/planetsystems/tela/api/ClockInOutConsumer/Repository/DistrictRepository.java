@@ -12,6 +12,9 @@ import java.util.*;
 @Repository
 public interface DistrictRepository extends JpaRepository<District, String> {
 
+    @EntityGraph(attributePaths = {"region"})
+    List<District> findAllByStatusNot(Status status);
+
 //    List<DistrictProjection> findAllByStatusNot(Status status);
 //	List<DistrictProjection> findAllByStatusNotAndRegion_IdOrderByNameAsc(Status status , String id);
 //	List<DistrictProjection> findAllByStatusNotAndRolledOutOrderByNameAsc(Status status , boolean rollOut);
