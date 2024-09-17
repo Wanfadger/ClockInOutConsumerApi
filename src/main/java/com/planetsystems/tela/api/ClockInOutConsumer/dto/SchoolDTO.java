@@ -1,6 +1,5 @@
 package com.planetsystems.tela.api.ClockInOutConsumer.dto;
 
-import com.planetsystems.tela.api.ClockInOutConsumer.model.AcademicTerm;
 import lombok.*;
 
 import java.io.Serializable;
@@ -22,6 +21,8 @@ public class SchoolDTO implements Serializable {
     private String schoolType;
     private boolean licensed;
     private String licenseKey;
+    private GeoCoordinateDTO geoCoordinate;
+
 
 
 }
