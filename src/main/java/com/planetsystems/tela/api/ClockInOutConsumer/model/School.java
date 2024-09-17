@@ -96,6 +96,11 @@ public class School extends ParentEntity implements Serializable {
     @OneToMany(mappedBy = "school" , targetEntity = SchoolOwner.class)
     List<SchoolOwner> schoolOwners;
 
+    @OneToMany(mappedBy = "school" , targetEntity = SchoolGeoCoordinate.class)
+    List<SchoolGeoCoordinate> schoolGeoCoordinateList;
+
+
+
 //    @OneToOne(mappedBy = "" , targetEntity = TelaSchoolLicense.class , fetch = FetchType.LAZY)
 //    private TelaSchoolLicense telaSchoolLicense;
 
