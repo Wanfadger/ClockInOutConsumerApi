@@ -22,6 +22,10 @@ public interface SchoolRepository extends JpaRepository<School, String> {
 
     Optional<IdProjection> findByTelaSchoolUIDAndStatusNot(String telaSchoolUID , Status status);
 
+
+
+    Optional<IdProjection> findByTelaSchoolUIDOrDeviceNumberAndStatusNot(String telaSchoolUID ,String deviceNumber, Status status);
+
 //    @EntityGraph(attributePaths = "{district}", type = EntityGraph.EntityGraphType.FETCH)
 //    Optional<School> findByStatusNotAndTelaSchoolUID(Status status, String telaSchoolUID);
 //
