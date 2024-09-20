@@ -10,6 +10,7 @@ import com.planetsystems.tela.api.ClockInOutConsumer.model.*;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.SchoolLevel;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.Status;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.SubjectClassification;
+import com.planetsystems.tela.api.ClockInOutConsumer.utils.TelaDatePattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -78,8 +79,8 @@ public class ClockInOutConsumerApplication implements CommandLineRunner {
 //			List<SNLearnerEnrollment> slearnerEnrollments = snLearnerEnrollmentRepository.allBySchool_term("2c92808282d44b4a0182d495066821d8", "8a8089aa8fa5e464018fae49dac500ce");
 //			log.info("SlearnerEnrollments {} "  ,slearnerEnrollments.size());
 
-			List<LearnerAttendance> learnerAttendances = learnerAttendanceRepository.allByTerm_School("8a8089aa8fa5e464018fae49dac500ce", "2c92808282d44b4a0182d492cc730818");
-				log.info("learnerAttendances {} "  ,learnerAttendances.size());
+//			List<LearnerAttendance> learnerAttendances = learnerAttendanceRepository.allByTerm_School("8a8089aa8fa5e464018fae49dac500ce", "2c92808282d44b4a0182d492cc730818");
+//				log.info("learnerAttendances {} "  ,learnerAttendances.size());
 
 //			List<LearnerAttendance> DATElearnerAttendances = learnerAttendanceRepository.allByDate_School(LocalDate.of(2024 , 8 , 06), "2c92808282d44b4a0182d492cc730818");
 //			log.info("learnerAttendances DTE {} "  ,DATElearnerAttendances.size());
@@ -90,6 +91,10 @@ public class ClockInOutConsumerApplication implements CommandLineRunner {
 //
 //			List<LearnerAttendance> sDATElearnerAttendances = snLearnerAttendanceRepository.allByDate_School(LocalDate.of(2024, 8, 06), "2c92808282d44b4a0182d492cc730818");
 //			log.info("slearnerAttendances DTE {} ", sDATElearnerAttendances.size());
+
+
+
+		List<ClockIn> schoolDateClockIns = clockInRepository.allClockByTerm_SchoolWithStaff(academicTerm.getId(), school.getId());
 
 
 		}
