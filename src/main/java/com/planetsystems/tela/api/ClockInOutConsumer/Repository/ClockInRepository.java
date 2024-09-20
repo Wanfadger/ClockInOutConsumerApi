@@ -13,7 +13,7 @@ import java.util.List;
 public interface ClockInRepository extends JpaRepository<ClockIn, String> {
 
     @Query(value = """
-            SELECT CL FROM ClockIns AS CL 
+            SELECT CL FROM ClockIns AS CL
             JOIN FETCH CL.schoolStaff AS ST
             JOIN FETCH ST.generalUserDetail AS GD
             WHERE CL.status <> 8 AND ST.status <> 8 AND GD.status <> 8
@@ -22,7 +22,7 @@ public interface ClockInRepository extends JpaRepository<ClockIn, String> {
     List<ClockIn> allClockByDate_SchoolWithStaff(LocalDate clockInDate, String schoolId);
 
     @Query(value = """
-            SELECT CL FROM ClockIns AS CL 
+            SELECT CL FROM ClockIns AS CL
             JOIN FETCH CL.schoolStaff AS ST
             JOIN FETCH ST.generalUserDetail AS GD
             WHERE CL.status <> 8 AND ST.status <> 8 AND GD.status <> 8
