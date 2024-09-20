@@ -129,6 +129,9 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                 .licensed(school.getLicensed() != null ? school.getLicensed() : false)
                 .build();
 
+
+
+
         Optional<SchoolGeoCoordinate> optionalSchoolGeoCoordinate = school.getSchoolGeoCoordinateList().parallelStream().findFirst();
 
         if (optionalSchoolGeoCoordinate.isPresent()) {
@@ -156,6 +159,9 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
         }
 
     }
+
+
+
 
     @Override
     @Async
