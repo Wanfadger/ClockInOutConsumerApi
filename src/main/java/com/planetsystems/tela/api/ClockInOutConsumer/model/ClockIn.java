@@ -2,7 +2,10 @@ package com.planetsystems.tela.api.ClockInOutConsumer.model;
 
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.ClockedStatus;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
@@ -28,7 +31,7 @@ public class ClockIn extends ParentEntity {
 	@JoinColumn(name = "school_id")
 	private School school;
 
-	@OneToOne(mappedBy = "clockIn", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	@OneToOne(mappedBy = "clockIn", fetch = FetchType.LAZY , targetEntity = ClockOut.class)
 	private ClockOut clockOut;
 
 	private LocalDate clockInDate;
@@ -40,8 +43,6 @@ public class ClockIn extends ParentEntity {
 	private String longitude;
 	private ClockedStatus clockedStatus;
 
-	@Transient()
-	private int localId;
 
 	private String clockinType;
 	private Integer displacement;

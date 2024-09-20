@@ -10,17 +10,16 @@ import java.util.Set;
 //@Table(name="ClockOuts",indexes = {@Index(columnList = "id,clockOutTime,clockedStatus")})
 //@Cache(region = "clockOutCache", usage = CacheConcurrencyStrategy.READ_WRITE)
 
-@NamedEntityGraph(name = "clockOut-clockIn-graph", attributeNodes = {
-		@NamedAttributeNode(value = "clockIn", subgraph = "school-sub-graph") }, subgraphs = {
-				@NamedSubgraph(name = "school-sub-graph", attributeNodes = @NamedAttributeNode(value = "school")) })
+//@NamedEntityGraph(name = "clockOut-clockIn-graph", attributeNodes = {
+//		@NamedAttributeNode(value = "clockIn", subgraph = "school-sub-graph") }, subgraphs = {
+//				@NamedSubgraph(name = "school-sub-graph", attributeNodes = @NamedAttributeNode(value = "school")) })
 
 @Setter
 @Getter
 @NoArgsConstructor
 public class ClockOut extends ParentEntity {
 
-	@OneToOne(fetch = FetchType.LAZY)
-//	@JsonBackReference
+	@OneToOne(fetch = FetchType.LAZY , targetEntity = ClockIn.class)
 	@JoinColumn(name = "clockIn_id", unique = true)
 	private ClockIn clockIn;
 
