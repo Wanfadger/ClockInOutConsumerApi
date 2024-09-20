@@ -4,6 +4,7 @@ package com.planetsystems.tela.api.ClockInOutConsumer.model;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.Status;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 
@@ -13,6 +14,7 @@ import java.time.LocalDate;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@SuperBuilder
 public class LearnerEnrollment extends ParentEntity{
 
 	@OneToOne(fetch = FetchType.LAZY)
