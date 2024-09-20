@@ -15,7 +15,7 @@ public interface LearnerEnrollmentRepository extends JpaRepository<LearnerEnroll
     @Query(value = """
             SELECT LE FROM LearnerEnrollment AS LE
             JOIN FETCH LE.schoolClass AS SC
-            WHERE LE.status <> 8  AND SC.status <> 8
+            WHERE LE.enrollmentStatus <> 8 AND SC.status <> 8
             AND SC.school.id =:schoolId AND SC.academicTerm.id =:termId
             """)
     List<LearnerEnrollment> allBySchool_term(String schoolId, String termId);
