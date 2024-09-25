@@ -1,40 +1,21 @@
 package com.planetsystems.tela.api.ClockInOutConsumer.model.enums;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+import java.util.Arrays;
+import java.util.Optional;
+
+@AllArgsConstructor
+@Getter
 public enum Gender {
     MALE("Male"),FEMALE("Female"),OTHERS("Others");
 
     private String gender;
 
-    Gender(String gender) {
-        this.gender = gender;
+    public static Optional<Gender> fromString(String genderStr) {
+        return Arrays.stream(Gender.values()).parallel().filter(g -> genderStr.equalsIgnoreCase(g.getGender())).findFirst();
     }
 
-    public String getGender() {
-        return gender;
-    }
-
-    public void setGender(String gender) {
-        this.gender = gender;
-    }
-
-    public static Gender getGender(String gender) {
-        for (Gender gd : Gender.values()) {
-            if (gd.getGender().equalsIgnoreCase(gender)) {
-                return gd;
-            }
-        }
-        return null;
-    }
-
-    public static String getType(String gender) {
-        int i = 0;
-        for (Gender gender2 : Gender.values()) {
-            if (gender2.getGender().equalsIgnoreCase(gender)) {
-                return Integer.toString(i);
-            }
-            i++;
-        }
-        return null;
-    }
 
 }
