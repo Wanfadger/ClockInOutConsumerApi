@@ -8,8 +8,8 @@ import java.util.function.Predicate;
 
 public interface TelaDatePattern {
     DateTimeFormatter datePattern = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    DateTimeFormatter dateTimePattern = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm:ss");
-    DateTimeFormatter timePattern = DateTimeFormatter.ofPattern("hh:mm:ss");
+//    DateTimeFormatter dateTimePattern = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm:ss");
+//    DateTimeFormatter timePattern = DateTimeFormatter.ofPattern("hh:mm:ss");
     DateTimeFormatter HourMinutePattern = DateTimeFormatter.ofPattern("hh:mm");
     DateTimeFormatter dateTimePattern24 = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
     DateTimeFormatter timePattern24 = DateTimeFormatter.ofPattern("HH:mm:ss");
