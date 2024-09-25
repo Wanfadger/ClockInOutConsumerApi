@@ -3,43 +3,24 @@ package com.planetsystems.tela.api.ClockInOutConsumer.model.enums;
 
 
 import com.planetsystems.tela.api.ClockInOutConsumer.exception.InvalidTokenException;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.Arrays;
+import java.util.Optional;
 
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
 public enum LessonDay {
     MON("Monday") , TUE("Tuesday") , WED("Wednesday") , THURS("Thursday") ,
     FRI("Friday") , SAT("Saturday") , SUN("Sunday");
 
     private String day;
 
-    LessonDay(String day) {
-        this.day = day;
-    }
-
-    public String getDay() {
-        return day;
-    }
-
-    public void setDay(String day) {
-        this.day = day;
-    }
-
-    public static LessonDay getLessonDay(String day){
-//        for (LessonDay lessonDay : LessonDay.values()) {
-//            if (lessonDay.getDay().equalsIgnoreCase(day)) {
-//                return lessonDay;
-//            }
-//        }
-        return Arrays.stream(LessonDay.values()).parallel().filter(lessonDay -> lessonDay.getDay().equalsIgnoreCase(day)).findFirst().orElseThrow(() -> new InvalidTokenException("Invalid LessonDay"));
-    }
-
-    public static String getLessonDayValue(String day){
-        for (LessonDay lessonDay : LessonDay.values()) {
-            if (lessonDay.getDay().equalsIgnoreCase(day)) {
-                return lessonDay.getDay();
-            }
-        }
-        return null;
+    public static Optional<LessonDay> fromString(String dayStr){
+        return Arrays.stream(LessonDay.values()).parallel().filter(lessonDay -> lessonDay.day.equalsIgnoreCase(dayStr)).findFirst();
     }
 
 
