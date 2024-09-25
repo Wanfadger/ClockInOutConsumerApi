@@ -1,5 +1,15 @@
 package com.planetsystems.tela.api.ClockInOutConsumer.model.enums;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.util.Arrays;
+import java.util.Optional;
+
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
 public enum Status {
 	IN_COMPLETE("Incomplete"),
 	COMPLETE("Complete"), 
@@ -15,40 +25,8 @@ public enum Status {
 
 	private String status;
 
-	Status(String status) {
-		this.status = status;
+	public static Optional<Status> fromString(String statusStr) {
+		return Arrays.stream(Status.values()).parallel().filter(s -> s.getStatus().equalsIgnoreCase(statusStr)).findFirst();
 	}
-
-	
-	public String getStatus() {
-		return status;
-	}
-
-	
-	public void setStatus(String status) {
-		this.status = status;
-	}
-
-	public static Status getStatus(String status) {
-		for(Status status2:Status.values()) {
-			if(status2.getStatus().equalsIgnoreCase(status)) {
-				return status2;
-			}
-		}
-		return null;
-	}
-
-	public static String getStatusValue(String status) {
-		int i=0;
-		for(Status status2:Status.values()) {
-			if(status2.getStatus().equalsIgnoreCase(status)) {
-				return Integer.toString(i);
-			}
-			i++;
-		} 
-		return null;
-	}
-
-
 
 }
