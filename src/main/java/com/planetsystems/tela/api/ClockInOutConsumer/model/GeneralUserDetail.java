@@ -4,6 +4,8 @@ package com.planetsystems.tela.api.ClockInOutConsumer.model;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.Gender;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
+
 import java.time.*;
 
 
@@ -14,6 +16,7 @@ import java.time.*;
 @Setter
 @Getter
 @NoArgsConstructor
+@SuperBuilder
 public class GeneralUserDetail extends ParentEntity {
 	private String firstName;
 	private String lastName;
