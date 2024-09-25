@@ -8,30 +8,21 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class StaffDTO {
-    private String id;
-    private String nationalId;
-    private String employeeNumber;
-    private String firstName;
-    private String lastName;
-
-    private boolean licensed;
-    private String phoneNumber;
-    private String email;
-
-    private String initials;
-    private String gender;
-    private String dob;
-    private String role;
-
-    private String onPayRoll;
-    private boolean teachingStaff;
-
-//    private String registrationNo;
-//    private String nationality;
-
-    private String fileDownloadUris;
-    private String hasSpecialNeeds;
-    private String staffType;
-
-    private int expectedHours; // expected number of hours per week
+    int localId;
+    String id;
+    String dob;
+    String role;
+    String gender;
+    String lastName;
+    String initials;
+    boolean licensed;
+    String firstName;
+    String staffType;
+    String onPayRoll;
+    String nationalId;
+    String phoneNumber;
+    String emailAddress;
+    int expectedHours;
+    String employeeNumber;
+    String hasSpecialNeeds;
 }
