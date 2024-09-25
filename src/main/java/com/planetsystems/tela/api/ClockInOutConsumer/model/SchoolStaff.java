@@ -4,6 +4,7 @@ import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.StaffInServiceS
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.StaffType;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import java.io.Serializable;
@@ -28,6 +29,7 @@ import java.util.*;
 @Setter
 @Getter
 @NoArgsConstructor
+@SuperBuilder
 public class SchoolStaff extends ParentEntity implements Serializable {
 	private String staffCode;
 	private StaffType staffType; // Role/position
