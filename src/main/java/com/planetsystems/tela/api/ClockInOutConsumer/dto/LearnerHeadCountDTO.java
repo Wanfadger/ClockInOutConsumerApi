@@ -8,9 +8,11 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class LearnerHeadCountDTO {
-    IdNameDTO schoolClass;
+    String classId;
+    String learnerType;
+    long totalFemale;
+    long totalMale;
+    String staffId;
     String submissionDate;
-    GenderCountDTO general;
-    GenderCountDTO specialNeeds;
 }
 
