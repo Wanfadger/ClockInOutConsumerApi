@@ -3,6 +3,8 @@ package com.planetsystems.tela.api.ClockInOutConsumer.model;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.AttendanceStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
+
 import java.io.Serializable;
 import java.time.*;
 import java.util.*;
@@ -16,12 +18,17 @@ import java.util.*;
  * to be renamed to StaffDailyTimeTableSupervisions to improve readability and meaning
  * recurring to StaffDailyTimeTableLessonSupervisions
  */
-@NamedEntityGraph(name = "staff-daily-attendance-supervision-graph" , attributeNodes = {
-		@NamedAttributeNode("supervisor"),
-		@NamedAttributeNode("schoolStaff")}
-)
+//@NamedEntityGraph(name = "staff-daily-attendance-supervision-graph" , attributeNodes = {
+//		@NamedAttributeNode("supervisor"),
+//		@NamedAttributeNode("schoolStaff")}
+//)
 @Entity
 @Table(name="StaffDailyAttendanceSupervisions")
+@Setter
+@Getter
+@SuperBuilder
+@AllArgsConstructor
+@NoArgsConstructor
 public class StaffDailyAttendanceSupervision extends ParentEntity{
 
 	//to removed
@@ -46,68 +53,5 @@ public class StaffDailyAttendanceSupervision extends ParentEntity{
      */
     @OneToMany(cascade = CascadeType.ALL , fetch = FetchType.LAZY , targetEntity = StaffDailyAttendanceTaskSupervision.class , mappedBy = "staffDailyAttendanceSupervision")
     private Set<StaffDailyAttendanceTaskSupervision> staffDailyAttendanceTaskSupervisions = new HashSet<>();
-
-    public StaffDailyAttendanceSupervision() {
-    }
-
-    public StaffDailyAttendanceSupervision(String id) {
-        super(id);
-    }
-
-    public SchoolStaff getSupervisor() {
-        return supervisor;
-    }
-
-    public void setSupervisor(SchoolStaff supervisor) {
-        this.supervisor = supervisor;
-    }
-
-    public SchoolStaff getSchoolStaff() {
-        return schoolStaff;
-    }
-
-    public void setSchoolStaff(SchoolStaff schoolStaff) {
-        this.schoolStaff = schoolStaff;
-    }
-
-    public String getComment() {
-        return comment;
-    }
-
-    public void setComment(String comment) {
-        this.comment = comment;
-    }
-
-    public LocalDate getSupervisionDate() {
-        return supervisionDate;
-    }
-
-    public void setSupervisionDate(LocalDate supervisionDate) {
-        this.supervisionDate = supervisionDate;
-    }
-
-    public LocalTime getSupervisionTime() {
-        return supervisionTime;
-    }
-
-    public void setSupervisionTime(LocalTime supervisionTime) {
-        this.supervisionTime = supervisionTime;
-    }
-
-    public Set<StaffDailyAttendanceTaskSupervision> getStaffDailyAttendanceTaskSupervisions() {
-        return staffDailyAttendanceTaskSupervisions;
-    }
-
-    public void setStaffDailyAttendanceTaskSupervisions(Set<StaffDailyAttendanceTaskSupervision> staffDailyAttendanceTaskSupervisions) {
-        this.staffDailyAttendanceTaskSupervisions = staffDailyAttendanceTaskSupervisions;
-    }
-
-    public AttendanceStatus getAttendanceStatus() {
-		return attendanceStatus;
-	}
-
-	public void setAttendanceStatus(AttendanceStatus attendanceStatus) {
-		this.attendanceStatus = attendanceStatus;
-	}
 
 }
