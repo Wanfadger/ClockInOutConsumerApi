@@ -2,6 +2,8 @@ package com.planetsystems.tela.api.ClockInOutConsumer.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
+
 import java.time.*;
 
 
@@ -20,6 +22,7 @@ import java.time.*;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
+@SuperBuilder
 public class LearnerAttendance extends ParentEntity {
 
 	@OneToOne(fetch = FetchType.LAZY)
