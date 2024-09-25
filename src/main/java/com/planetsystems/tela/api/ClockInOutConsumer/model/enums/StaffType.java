@@ -1,5 +1,13 @@
 package com.planetsystems.tela.api.ClockInOutConsumer.model.enums;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+import java.util.Arrays;
+import java.util.Optional;
+
+@Getter
+@AllArgsConstructor
 public enum StaffType {
 
 	TEACHER("Teacher"),//0
@@ -14,25 +22,15 @@ public enum StaffType {
 
 	private String type;
 
-	StaffType(String type) {
-		this.type = type;
-	}
+
 
 	public String getStaffType() {
 		return type;
 	}
 
-	public void setStaffType(String type) {
-		this.type = type;
-	}
 
-	public static StaffType getStaffType(String type) {
-		for (StaffType staffType : StaffType.values()) {
-			if (staffType.getStaffType().equalsIgnoreCase(type)) {
-				return staffType;
-			}
-		}
-		return null;
+	public static Optional<StaffType> fromString(String type) {
+	return Arrays.stream(StaffType.values()).parallel().filter(staffType -> type.equalsIgnoreCase(staffType.type)).findFirst();
 	}
 
 }
