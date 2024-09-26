@@ -3,6 +3,8 @@ package com.planetsystems.tela.api.ClockInOutConsumer.model;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.ClockedStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
+
 import java.time.*;
 
 import java.util.Set;
@@ -17,6 +19,7 @@ import java.util.Set;
 @Setter
 @Getter
 @NoArgsConstructor
+@SuperBuilder
 public class ClockOut extends ParentEntity {
 
 	@OneToOne(fetch = FetchType.LAZY , targetEntity = ClockIn.class)
