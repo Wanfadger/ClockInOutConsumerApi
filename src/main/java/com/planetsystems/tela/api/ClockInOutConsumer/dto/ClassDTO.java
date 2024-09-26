@@ -10,8 +10,6 @@ import lombok.*;
 public class ClassDTO {
     private String id;
     private String name;
-//    private boolean hasStreams;
-//    private boolean classLevel;
+    private int localId;
     private String parentSchoolClassId;
-//    private String parentSchoolClassName;
 }
