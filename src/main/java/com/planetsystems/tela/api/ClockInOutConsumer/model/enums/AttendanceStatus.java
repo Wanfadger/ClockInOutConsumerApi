@@ -1,27 +1,21 @@
 package com.planetsystems.tela.api.ClockInOutConsumer.model.enums;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.util.Arrays;
+import java.util.Optional;
+
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
 public enum AttendanceStatus {
     PRESENT("Present") , ABSENT("Absent");
     private String attendance;
 
-    AttendanceStatus(String attendance) {
-        this.attendance = attendance;
-    }
 
-    public String getAttendance() {
-        return attendance;
-    }
-
-    public void setAttendance(String attendance) {
-        this.attendance = attendance;
-    }
-
-    public static AttendanceStatus getAttendance(String attendance){
-        for (AttendanceStatus attendanceStatus : AttendanceStatus.values()) {
-            if (attendanceStatus.getAttendance().equalsIgnoreCase(attendance)) {
-                return attendanceStatus;
-            }
-        }
-        return null;
+    public static Optional<AttendanceStatus> fromString(String attendanceStr){
+        return Arrays.stream(AttendanceStatus.values()).parallel().filter(attendanceStatus -> attendanceStatus.attendance.equalsIgnoreCase(attendanceStr)).findFirst();
     }
 }
