@@ -1,16 +1,14 @@
 package com.planetsystems.tela.api.ClockInOutConsumer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.planetsystems.tela.api.ClockInOutConsumer.Repository.*;
 import com.planetsystems.tela.api.ClockInOutConsumer.Repository.projections.IdProjection;
-import com.planetsystems.tela.api.ClockInOutConsumer.dto.ClockInRequestDTO;
-import com.planetsystems.tela.api.ClockInOutConsumer.dto.MQResponseDto;
+import com.planetsystems.tela.api.ClockInOutConsumer.dto.timetable.ClassTimetableDTO;
+import com.planetsystems.tela.api.ClockInOutConsumer.dto.timetable.TimeTableLessonDTO;
+import com.planetsystems.tela.api.ClockInOutConsumer.dto.timetable.TimetableDTO;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.*;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.SchoolLevel;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.Status;
-import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.SubjectClassification;
-import com.planetsystems.tela.api.ClockInOutConsumer.utils.TelaDatePattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -20,7 +18,6 @@ import org.springframework.jms.annotation.JmsListener;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -67,6 +64,20 @@ public class ClockInOutConsumerApplication implements CommandLineRunner {
 			log.info("school {} " , school.getId());
 			log.info("academicTerm {} " , academicTerm.getId());
 			SchoolLevel schoolLevel = school.getSchoolLevel();
+
+			ClassTimetableDTO classTimetableDTO = ClassTimetableDTO.builder()
+					.lessons(List.of(TimeTableLessonDTO.builder().build()))
+					.build();
+
+			TimetableDTO timetableDTO = TimetableDTO.builder()
+					.id("")
+					.schoolId("")
+					.academicTermId("")
+					.classTimetables(List.of(classTimetableDTO))
+					.build();
+
+//			log.info("TIME TABLE \n {} " , timetableDTO);
+
 //			SubjectClassification subjectClassification = SubjectClassification.getSubjectClassification(schoolLevel.getLevel());
 //			clockInRepository.allClockByDate_SchoolWithStaff(LocalDate.now(), schoolIdProjection.getId());
 //			List<Subject> subjects = subjectRepository.findAllBySubjectClassificationNotNullAndStatusNotAndSubjectClassification(Status.DELETED, subjectClassification);
@@ -94,7 +105,7 @@ public class ClockInOutConsumerApplication implements CommandLineRunner {
 
 
 
-		List<ClockIn> schoolDateClockIns = clockInRepository.allClockByTerm_SchoolWithStaff(academicTerm.getId(), school.getId());
+//		List<ClockIn> schoolDateClockIns = clockInRepository.allByTerm_SchoolWithStaff(academicTerm.getId(), school.getId());
 
 
 		}
