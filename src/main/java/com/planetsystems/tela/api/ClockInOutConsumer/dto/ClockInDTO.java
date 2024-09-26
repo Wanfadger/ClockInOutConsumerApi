@@ -13,7 +13,9 @@ import java.io.Serializable;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ClockInRequestDTO implements Serializable {
+public class ClockInDTO implements Serializable {
+	private String id;
+
 	@NotEmpty(message = "telaSchoolNumber Id is required")
 	@NotBlank(message = "telaSchoolNumber Id is required")
 	private String staffId;
