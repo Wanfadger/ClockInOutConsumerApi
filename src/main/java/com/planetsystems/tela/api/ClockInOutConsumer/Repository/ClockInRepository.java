@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ClockInRepository extends JpaRepository<ClockIn, String> {
@@ -19,7 +20,7 @@ public interface ClockInRepository extends JpaRepository<ClockIn, String> {
             WHERE CL.status <> 8 AND ST.status <> 8 AND GD.status <> 8
             AND CL.clockInDate =:clockInDate AND CL.school.id =:schoolId
             """)
-    List<ClockIn> allClockByDate_SchoolWithStaff(LocalDate clockInDate, String schoolId);
+    List<ClockIn> allByDate_SchoolWithStaff(LocalDate clockInDate, String schoolId);
 
     @Query(value = """
             SELECT CL FROM ClockIns AS CL
@@ -28,9 +29,22 @@ public interface ClockInRepository extends JpaRepository<ClockIn, String> {
             WHERE CL.status <> 8 AND ST.status <> 8 AND GD.status <> 8
             AND CL.academicTerm.id =:termId AND CL.school.id =:schoolId
             """)
-    List<ClockIn> allClockByTerm_SchoolWithStaff(String termId, String schoolId);
+    List<ClockIn> allByTerm_SchoolWithStaff(String termId, String schoolId);
 
-    boolean existsByStatusNotAndClockInDateAndSchoolStaff_Id(Status status , LocalDate clockInDate , String staffId);
+    @Query(value = """
+            SELECT CL FROM ClockIns AS CL
+            WHERE CL.status <> 8
+            AND CL.academicTerm.id =:termId AND CL.school.id =:schoolId
+            """)
+    List<ClockIn> allByTerm_School(String termId, String schoolId);
+
+
+    @Query(value = """
+            SELECT CL FROM ClockIns AS CL
+            WHERE CL.status <> 8
+            AND CL.clockInDate =:clockInDate AND CL.schoolStaff.id =:staffId
+            """)
+    Optional<ClockIn> clockInByDate_Staff(LocalDate clockInDate, String staffId);
 
 //
 //    @EntityGraph(attributePaths = "{schoolStaff.generalUserDetail}" , type = EntityGraph.EntityGraphType.FETCH)
