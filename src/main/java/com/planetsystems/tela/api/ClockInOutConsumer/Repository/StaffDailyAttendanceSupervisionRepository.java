@@ -35,7 +35,7 @@ public interface StaffDailyAttendanceSupervisionRepository extends JpaRepository
             WHERE SAS.status <> 8 AND ST.status <> 8
             AND ST.school.id =:schoolId AND SAS.supervisionDate =:localDate
             """)
-    List<StaffDailyAttendanceSupervision> allByDate_School(LocalDate localDate, String id);
+    List<StaffDailyAttendanceSupervision> allByDate_School(LocalDate localDate, String schoolId);
 
     //    @EntityGraph(value = "staff-daily-attendance-supervision-graph", type = EntityGraph.EntityGraphType.FETCH)
 //    List<StaffDailyAttendanceSupervision> findAllByStatusNot(Status status);
