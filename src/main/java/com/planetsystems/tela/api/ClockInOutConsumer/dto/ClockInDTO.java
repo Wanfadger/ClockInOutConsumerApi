@@ -16,16 +16,16 @@ import java.io.Serializable;
 public class ClockInDTO implements Serializable {
 	private String id;
 
-	@NotEmpty(message = "telaSchoolNumber Id is required")
-	@NotBlank(message = "telaSchoolNumber Id is required")
+	@NotEmpty(message = "staffId Id is required")
+	@NotBlank(message = "staffId Id is required")
 	private String staffId;
 
-	@NotEmpty(message = "telaSchoolNumber Id is required")
-	@NotBlank(message = "telaSchoolNumber Id is required")
+	@NotEmpty(message = "latitude Id is required")
+	@NotBlank(message = "latitude Id is required")
 	private String latitude;
 
-	@NotEmpty(message = "telaSchoolNumber Id is required")
-	@NotBlank(message = "telaSchoolNumber Id is required")
+	@NotEmpty(message = "longitude Id is required")
+	@NotBlank(message = "longitude Id is required")
 	private String longitude;
 
 	@NotEmpty(message = "clockInDateTime Id is required")
