@@ -7,7 +7,9 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@ToString
 public class GeoCoordinateDTO {
+    private String id;
     double latitude;
     double longitude;
     boolean geoFenceActivated= true;
