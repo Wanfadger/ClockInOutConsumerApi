@@ -17,6 +17,14 @@ public interface TimeTableLessonRepository extends JpaRepository<TimeTableLesson
             """)
     List<TimeTableLesson> allByTimetable(String timetableId);
 
+    @Query("""
+            SELECT TL FROM TimeTableLesson AS TL 
+            JOIN FETCH TL.timeTable AS T
+            WHERE TL.status <> 8 AND T.status <> 8 
+            AND T.academicTerm.id =:termId AND T.school.id =:schoolId AND TL.schoolClass.id =:classId  
+            """)
+    List<TimeTableLesson> allByTerm_School_Class( String termId, String schoolId , String classId);
+
     //    List<TimeTableLesson> findAllByStatusNot(Status status);
 //
 //    List<TimeTableLesson> findAllByStatus(Status status);
