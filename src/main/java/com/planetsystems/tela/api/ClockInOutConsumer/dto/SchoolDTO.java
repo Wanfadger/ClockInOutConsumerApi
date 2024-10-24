@@ -9,6 +9,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@ToString
 public class SchoolDTO implements Serializable {
     private String telaSchoolNumber;
     private String phoneNumber;
