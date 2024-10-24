@@ -32,17 +32,17 @@ import java.util.*;
 @SuperBuilder
 public class SchoolStaff extends ParentEntity implements Serializable {
 	private String staffCode;
-	private StaffType staffType; // Role/position
+	private StaffType staffType; // Role/position from mobile
 	@ManyToOne(fetch = FetchType.LAZY)
 	private School school;
-	@OneToOne(fetch = FetchType.LAZY , targetEntity = GeneralUserDetail.class)
+	@OneToOne(fetch = FetchType.LAZY , targetEntity = GeneralUserDetail.class , cascade = {CascadeType.PERSIST})
 	private GeneralUserDetail generalUserDetail;
 
 //	@OneToOne(mappedBy = "schoolStaff" , cascade = CascadeType.ALL ,  fetch = FetchType.LAZY)
 //	private LearnerAttendance learnerAttendance;
 
 	private boolean registered; // payroll status
-	private boolean teachingstaff; //
+	private boolean teachingstaff; // staff type from mobile
 
 	private String registrationNo;
 	private String nationality;
