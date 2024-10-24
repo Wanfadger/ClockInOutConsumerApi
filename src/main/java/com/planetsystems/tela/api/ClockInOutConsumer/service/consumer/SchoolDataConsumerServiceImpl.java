@@ -7,10 +7,17 @@ import com.planetsystems.tela.api.ClockInOutConsumer.Repository.*;
 import com.planetsystems.tela.api.ClockInOutConsumer.Repository.projections.IdProjection;
 import com.planetsystems.tela.api.ClockInOutConsumer.dto.*;
 import com.planetsystems.tela.api.ClockInOutConsumer.dto.schoolData.SchoolDataPublishPayloadDTO;
+import com.planetsystems.tela.api.ClockInOutConsumer.dto.supervision.StaffDailyAttendanceTaskSupervisionDTO;
+import com.planetsystems.tela.api.ClockInOutConsumer.dto.timetable.StaffDailyTimetableDTO;
+import com.planetsystems.tela.api.ClockInOutConsumer.dto.timetable.UpdateTimeTableLessonDTO;
 import com.planetsystems.tela.api.ClockInOutConsumer.exception.TelaNotFoundException;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.*;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.*;
 import com.planetsystems.tela.api.ClockInOutConsumer.utils.TelaDatePattern;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jms.annotation.JmsListener;
@@ -20,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -27,7 +35,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class SchoolDataConsumerImpl {
+public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
 
     final ObjectMapper objectMapper;
     final LearnerEnrollmentRepository learnerEnrollmentRepository;
@@ -38,7 +46,15 @@ public class SchoolDataConsumerImpl {
     final SchoolClassRepository schoolClassRepository;
     final AcademicTermRepository academicTermRepository;
     final SchoolStaffRepository schoolStaffRepository;
+    final GeneralUserDetailsRepository generalUserDetailsRepository;
     final StaffDailyAttendanceSupervisionRepository staffDailyAttendanceSupervisionRepository;
+    final StaffDailyTimeTableRepository staffDailyTimeTableRepository;
+    final StaffDailyTimeTableLessonRepository staffDailyTimeTableLessonRepository;
+    final StaffDailyAttendanceTaskSupervisionRepository staffDailyAttendanceTaskSupervisionRepository;
+
+    final TimeTableLessonRepository timeTableLessonRepository;
+
+    final SchoolGeoCoordinateRepository schoolGeoCoordinateRepository;
     final JmsTemplate jmsTemplate;
 
 
@@ -47,6 +63,7 @@ public class SchoolDataConsumerImpl {
 
     @JmsListener(destination = "${queue.learnerHeadCounts}")
     @Transactional
+    @Override
     public void subscribeLearnerHeadCounts(String learnerHeadCountStr) throws JsonProcessingException {
         log.info("learnerHeadCountStr {}  " , learnerHeadCountStr);
         SchoolDataPublishPayloadDTO<List<LearnerHeadCountDTO>> publishPayloadDTO = objectMapper.readValue(learnerHeadCountStr, new TypeReference<SchoolDataPublishPayloadDTO<List<LearnerHeadCountDTO>>>() {
@@ -72,6 +89,7 @@ public class SchoolDataConsumerImpl {
                         LearnerEnrollment enrollment = LearnerEnrollment.builder()
                                 .schoolClass(new SchoolClass(dto.getClassId()))
                                 .enrollmentStatus(Status.ACTIVE)
+                                .status(Status.ACTIVE)
                                 .schoolStaff(new SchoolStaff(dto.getStaffId()))
                                 .totalBoys(dto.getTotalMale())
                                 .totalGirls(dto.getTotalFemale())
@@ -93,6 +111,7 @@ public class SchoolDataConsumerImpl {
                         SNLearnerEnrollment enrollment = SNLearnerEnrollment.builder()
                                 .schoolClass(new SchoolClass(dto.getClassId()))
                                 .enrollmentStatus(Status.ACTIVE)
+                                .status(Status.ACTIVE)
                                 .schoolStaff(new SchoolStaff(dto.getStaffId()))
                                 .totalBoys(dto.getTotalMale())
                                 .totalGirls(dto.getTotalFemale())
@@ -112,8 +131,9 @@ public class SchoolDataConsumerImpl {
                     .flatMap(dto -> learnerEnrollments.parallelStream()
                             .filter(enrollment -> dto.getClassId().equals(enrollment.getSchoolClass().getId()))
                             .map(enrollment -> {
-                                enrollment.setTotalBoys(enrollment.getTotalBoys());
-                                enrollment.setTotalGirls(enrollment.getTotalGirls());
+                                enrollment.setStatus(Status.ACTIVE);
+                                enrollment.setTotalBoys(dto.getTotalMale());
+                                enrollment.setTotalGirls(dto.getTotalFemale());
                                 return enrollment;
                             })
                     ).toList();
@@ -127,8 +147,9 @@ public class SchoolDataConsumerImpl {
                     .flatMap(dto -> snLearnerEnrollments.parallelStream()
                             .filter(enrollment -> dto.getClassId().equals(enrollment.getSchoolClass().getId()))
                             .map(enrollment -> {
-                                enrollment.setTotalBoys(enrollment.getTotalBoys());
-                                enrollment.setTotalGirls(enrollment.getTotalGirls());
+                                enrollment.setStatus(Status.ACTIVE);
+                                enrollment.setTotalBoys(dto.getTotalMale());
+                                enrollment.setTotalGirls(dto.getTotalFemale());
                                 return enrollment;
                             })
                     ).toList();
@@ -156,6 +177,7 @@ public class SchoolDataConsumerImpl {
 
     @JmsListener(destination = "${queue.classAttendances}")
     @Transactional
+    @Override
     public void subscribeClassAttendances(String classAttendanceStr) throws JsonProcessingException {
         log.info("subscribeClassAttendances {}  " , classAttendanceStr);
         SchoolDataPublishPayloadDTO<List<LearnerAttendanceDTO>> publishPayloadDTO = objectMapper.readValue(classAttendanceStr, new TypeReference<SchoolDataPublishPayloadDTO<List<LearnerAttendanceDTO>>>() {
@@ -287,6 +309,7 @@ public class SchoolDataConsumerImpl {
 
     @JmsListener(destination = "${queue.classes}")
     @Transactional
+    @Override
     public void subscribeClasses(String classesStr) throws JsonProcessingException {
         log.info("subscribeClasses {}  " , classesStr);
         SchoolDataPublishPayloadDTO<List<ClassDTO>> publishPayloadDTO = objectMapper.readValue(classesStr, new TypeReference<SchoolDataPublishPayloadDTO<List<ClassDTO>>>() {
@@ -372,6 +395,7 @@ public class SchoolDataConsumerImpl {
 
     @JmsListener(destination = "${queue.staffs}")
     @Transactional
+    @Override
     public void subscribeStaffs(String staffStr) throws JsonProcessingException {
 
         try {
@@ -427,6 +451,8 @@ public class SchoolDataConsumerImpl {
                             .nameAbbrev(dto.getInitials())
                             .nationalId(dto.getNationalId())
                             .phoneNumber(dto.getPhoneNumber())
+                            .schoolStaff(schoolStaff)
+                            .status(Status.ACTIVE)
                             .build();
                     schoolStaff.setGeneralUserDetail(generalUserDetail);
 
@@ -438,27 +464,51 @@ public class SchoolDataConsumerImpl {
 
 
                 // process existing
-                List<SchoolStaff> allUpdatedExistingStaffs = allExistingStaffDTOS.parallelStream()
+                // return general user details
+//                List<GeneralUserDetail> allUpdatedExistingStaffDetails = allExistingStaffDTOS.parallelStream()
+//                        .flatMap(dto -> allExistingStaffs.parallelStream()
+//                                .filter(staff -> dto.getId().equals(staff.getId()))
+//                                .map(staff -> {
+//                                    Optional<Gender> optionalGender = Gender.fromString(dto.getGender());
+//                                    GeneralUserDetail generalUserDetail = staff.getGeneralUserDetail();
+//                                    generalUserDetail.setStatus(Status.ACTIVE);
+//                                    generalUserDetail.setEmail(dto.getEmailAddress());
+//                                    generalUserDetail.setFirstName(dto.getFirstName());
+//                                    generalUserDetail.setLastName(dto.getLastName());
+//                                    generalUserDetail.setNameAbbrev(dto.getInitials());
+//                                    generalUserDetail.setNationalId(dto.getNationalId());
+//                                    generalUserDetail.setGender(optionalGender.isPresent() ? optionalGender.get() : Gender.MALE);
+//                                    generalUserDetail.setPhoneNumber(dto.getPhoneNumber());
+//                                    return generalUserDetail;
+//                                })
+//                        ).toList();
+//                if (allUpdatedExistingStaffDetails.size() > 0) {
+//                    generalUserDetailsRepository.saveAll(allUpdatedExistingStaffDetails);
+//                }
+
+                List<SchoolStaff> allUpdatedExistingStaffDetails = allExistingStaffDTOS.parallelStream()
                         .flatMap(dto -> allExistingStaffs.parallelStream()
                                 .filter(staff -> dto.getId().equals(staff.getId()))
                                 .map(staff -> {
+                                    staff.setStaffType(StaffType.fromString(dto.getRole()).get());
+                                    staff.setTeachingstaff(dto.getStaffType().equalsIgnoreCase("Teaching") ? true : false);
+
                                     Optional<Gender> optionalGender = Gender.fromString(dto.getGender());
-                                    GeneralUserDetail generalUserDetail = GeneralUserDetail.builder()
-                                            .id(staff.getGeneralUserDetail().getId())
-                                            .email(dto.getEmailAddress())
-                                            .firstName(dto.getFirstName())
-                                            .lastName(dto.getLastName())
-                                            .gender(optionalGender.isPresent() ? optionalGender.get() : Gender.MALE)
-                                            .nameAbbrev(dto.getInitials())
-                                            .nationalId(dto.getNationalId())
-                                            .phoneNumber(dto.getPhoneNumber())
-                                            .build();
+                                    GeneralUserDetail generalUserDetail = staff.getGeneralUserDetail();
+                                    generalUserDetail.setStatus(Status.ACTIVE);
+                                    generalUserDetail.setEmail(dto.getEmailAddress());
+                                    generalUserDetail.setFirstName(dto.getFirstName());
+                                    generalUserDetail.setLastName(dto.getLastName());
+                                    generalUserDetail.setNameAbbrev(dto.getInitials());
+                                    generalUserDetail.setNationalId(dto.getNationalId());
+                                    generalUserDetail.setGender(optionalGender.isPresent() ? optionalGender.get() : Gender.MALE);
+                                    generalUserDetail.setPhoneNumber(dto.getPhoneNumber());
                                     staff.setGeneralUserDetail(generalUserDetail);
                                     return staff;
                                 })
                         ).toList();
-                if (allUpdatedExistingStaffs.size() > 0) {
-                    schoolStaffRepository.saveAll(allUpdatedExistingStaffs);
+                if (allUpdatedExistingStaffDetails.size() > 0) {
+                    schoolStaffRepository.saveAll(allUpdatedExistingStaffDetails);
                 }
 
                 allSavedNewStaffDTOS.addAll(allExistingStaffDTOS);
@@ -481,7 +531,8 @@ public class SchoolDataConsumerImpl {
 
     @JmsListener(destination = "${queue.staffDailyTimeAttendances}")
     @Transactional
-    public void subscribeStaffDailyTimeAttendances(String staffStr) throws JsonProcessingException {
+    @Override
+    public void subscribeStaffDailyTimeAttendances(String staffStr) {
 
         try {
             log.info("subscribeStaffs {}  " , staffStr);
@@ -499,7 +550,8 @@ public class SchoolDataConsumerImpl {
                 log.info("FOUND TELA NUMBER {} ", publishPayloadDTO.getSchoolTelaNumber());
                 IdProjection idProjection = optionalIdProjection.get();
 
-                List<StaffDailyAttendanceSupervision> existingTermStaffDailyAttendanceSupervisions = staffDailyAttendanceSupervisionRepository.allByTerm_School(academicTerm.getStartDate(), academicTerm.getEndDate(), idProjection.getId());
+                List<StaffDailyAttendanceSupervision> existingTermStaffDailyAttendanceSupervisions = staffDailyAttendanceSupervisionRepository
+                        .allByTerm_School(academicTerm.getStartDate(), academicTerm.getEndDate(), idProjection.getId());
 
 
                 // process new general learners
@@ -563,8 +615,287 @@ public class SchoolDataConsumerImpl {
 
     }
 
+    @JmsListener(destination = "${queue.updateTimetableLessons}")
+    @Transactional
+    @Override
+    public void subscribeUpdateTimetableLessons(String updateTimetableLessonStr) {
+        try {
+            log.info("subscribeUpdateTimetableLessons {}  " , updateTimetableLessonStr);
+            SchoolDataPublishPayloadDTO<List<UpdateTimeTableLessonDTO>> publishPayloadDTO = objectMapper.readValue(updateTimetableLessonStr, new TypeReference<>() {
+            });
 
 
+            List<UpdateTimeTableLessonDTO> allUpdateTimeTableLessonDTOS =  publishPayloadDTO.getData();
+            Optional<UpdateTimeTableLessonDTO> firstOptional = allUpdateTimeTableLessonDTOS.parallelStream().findFirst();
+            log.info("allUpdateTimeTableLessonDTOS {} " , allUpdateTimeTableLessonDTOS.size());
+
+            AcademicTerm academicTerm = academicTermRepository.findById(publishPayloadDTO.getAcademicTerm()).orElseThrow(() -> new TelaNotFoundException("Term " + publishPayloadDTO.getAcademicTerm() + " not found"));
+
+            Optional<IdProjection> optionalIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(publishPayloadDTO.getSchoolTelaNumber(), Status.DELETED);
+
+            if (optionalIdProjection.isPresent() && firstOptional.isPresent()) {
+                log.info("FOUND TELA NUMBER {} ", publishPayloadDTO.getSchoolTelaNumber());
+                IdProjection idProjection = optionalIdProjection.get();
+                UpdateTimeTableLessonDTO firstDTO = firstOptional.get();
+
+                List<TimeTableLesson> allClassTimeTableLessons = timeTableLessonRepository.allByTerm_School_Class(academicTerm.getId(), idProjection.getId(),firstDTO.getClassId() );
+                // todo get all class subjects for that term
+
+                List<TimeTableLesson> updatedTimeTableLessons = allUpdateTimeTableLessonDTOS.parallelStream().flatMap(dto -> allClassTimeTableLessons.parallelStream().filter(lesson -> dto.getId().equalsIgnoreCase(lesson.getId())).map(lesson -> {
+                    lesson.setSchoolStaff(new SchoolStaff(dto.getStaffId()));
+                    lesson.setSubject(new Subject(dto.getSubjectId()));
+                    return lesson;
+                })).toList();
+
+                timeTableLessonRepository.saveAll(updatedTimeTableLessons);
+
+                jmsTemplate.setPubSubDomain(true);
+                MQResponseDto<List<UpdateTimeTableLessonDTO>> responseDto = new MQResponseDto<>();
+                responseDto.setResponseType(ResponseType.UPDATE_TIMETABLE_LESSONS);
+                responseDto.setData(allUpdateTimeTableLessonDTOS);
+                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+                log.info("PUBLISHED SAVE UPDATED UPDATE_TIMETABLE_LESSONS  for {} {} {} ",academicTerm.getTerm(), idProjection.getId() ,  allUpdateTimeTableLessonDTOS.size());
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e);
+        }
+    }
+
+    @JmsListener(destination = "${queue.staffDailyTimetables}")
+    @Transactional
+    @Override
+    public void subscribeStaffDailyTimetables(String staffDailyTimetableStr) throws JsonProcessingException {
+        try {
+            log.info("subscribeStaffDailyTimetables {}  " , staffDailyTimetableStr);
+            SchoolDataPublishPayloadDTO<List<StaffDailyTimetableDTO>> publishPayloadDTO = objectMapper.readValue(staffDailyTimetableStr, new TypeReference<>() {
+            });
+
+
+            List<StaffDailyTimetableDTO> allStaffDailyTimetableDTOS =  publishPayloadDTO.getData();
+            log.info("allStaffDailyTimetableDTOS {} " , allStaffDailyTimetableDTOS.size());
+
+            AcademicTerm academicTerm = academicTermRepository.findById(publishPayloadDTO.getAcademicTerm()).orElseThrow(() -> new TelaNotFoundException("Term " + publishPayloadDTO.getAcademicTerm() + " not found"));
+
+            Optional<IdProjection> optionalIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(publishPayloadDTO.getSchoolTelaNumber(), Status.DELETED);
+
+            if (optionalIdProjection.isPresent()) {
+                log.info("FOUND TELA NUMBER {} ", publishPayloadDTO.getSchoolTelaNumber());
+                IdProjection idProjection = optionalIdProjection.get();
+
+                List<StaffDailyTimeTable> existingTermStaffDailyAttendanceSupervisions = staffDailyTimeTableRepository
+                        .allByTerm_School(academicTerm.getId(), idProjection.getId());
+                List<StaffDailyTimeTableLesson> existingStaffDailyTimeTableLessons = staffDailyTimeTableLessonRepository.allIn(existingTermStaffDailyAttendanceSupervisions);
+
+
+                // process new general learners
+                List<StaffDailyTimetableDTO> allNewStaffDailyTimetableDTOS = allStaffDailyTimetableDTOS.parallelStream().filter(dto -> dto.getId().equalsIgnoreCase("")).toList();
+                List<StaffDailyTimetableDTO> allExistingStaffDailyTimetableDTOS = allStaffDailyTimetableDTOS.parallelStream().filter(dto -> !dto.getId().equalsIgnoreCase("")).toList();
+
+                /// new
+                List<StaffDailyTimetableDTO> allSavedNewStaffDailyTimetableDTOS = allNewStaffDailyTimetableDTOS.parallelStream().map(dto -> {
+
+                    StaffDailyTimeTable staffDailyTimeTable = StaffDailyTimeTable.builder()
+                            .lessonDate(LocalDate.parse(dto.getSubmissionDate() , TelaDatePattern.datePattern))
+                            .academicTerm(new AcademicTerm(publishPayloadDTO.getAcademicTerm()))
+                            .schoolStaff(new SchoolStaff(dto.getStaffId()))
+                            .comment(dto.getComment())
+                            .status(Status.ACTIVE)
+                            .build();
+
+
+                    StaffDailyTimeTableLesson staffDailyTimeTableLesson = StaffDailyTimeTableLesson.builder()
+                            .dailyTimeTableLessonStatus(AttendanceStatus.fromString(dto.getActionStatus()).get())
+                            .lessonDate(LocalDate.parse(dto.getSubmissionDate() , TelaDatePattern.datePattern))
+                            .schoolClass(new SchoolClass(dto.getClassId()))
+                            .subject(new Subject(dto.getSubjectId()))
+                            .startTime(LocalTime.parse(dto.getStartTime() , TelaDatePattern.timePattern24))
+                            .endTime(LocalTime.parse(dto.getEndTime() , TelaDatePattern.timePattern24))
+                            .staffDailyTimeTable(staffDailyTimeTable)
+                            .status(Status.ACTIVE)
+                            .build();
+
+                    StaffDailyTimeTableLesson save = staffDailyTimeTableLessonRepository.save(staffDailyTimeTableLesson);
+                    dto.setId(save.getId());
+
+                    return dto;
+                }).collect(Collectors.toList());
+
+
+                // process existing
+                List<StaffDailyTimeTableLesson> allUpdatedExistingStaffDailyTimetables = allExistingStaffDailyTimetableDTOS.parallelStream()
+                        .flatMap(dto -> existingStaffDailyTimeTableLessons.parallelStream()
+                                .filter(dailyTimeTable -> dto.getId().equals(dailyTimeTable.getId()))
+                                .map(dailyTimeTable -> {
+                                  dailyTimeTable.setSubject(new Subject(dto.getSubjectId()));
+                                  dailyTimeTable.setEndTime(LocalTime.parse(dto.getEndTime() , TelaDatePattern.timePattern24));
+                                  dailyTimeTable.setStartTime(LocalTime.parse(dto.getStartTime() , TelaDatePattern.timePattern24));
+                                  dailyTimeTable.setSchoolClass(new SchoolClass(dto.getClassId()));
+                                  dailyTimeTable.setLessonDate(LocalDate.parse(dto.getSubmissionDate() , TelaDatePattern.datePattern));
+                                  dailyTimeTable.setDailyTimeTableLessonStatus(AttendanceStatus.fromString(dto.getActionStatus()).get());
+                                    return dailyTimeTable;
+                                })
+                        ).toList();
+
+                if (allUpdatedExistingStaffDailyTimetables.size() > 0) {
+                    staffDailyTimeTableLessonRepository.saveAll(allUpdatedExistingStaffDailyTimetables);
+                }
+
+                allSavedNewStaffDailyTimetableDTOS.addAll(allExistingStaffDailyTimetableDTOS);
+
+                jmsTemplate.setPubSubDomain(true);
+                MQResponseDto<List<StaffDailyTimetableDTO>> responseDto = new MQResponseDto<>();
+                responseDto.setResponseType(ResponseType.STAFF_DAILY_TIMETABLES);
+                responseDto.setData(allSavedNewStaffDailyTimetableDTOS);
+                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+                log.info("PUBLISHED SAVE UPDATED STAFF_DAILY_TIMETABLES  for {} {} {} ",academicTerm.getTerm(), idProjection.getId() ,  allSavedNewStaffDailyTimetableDTOS.size());
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e);
+        }
+    }
+
+
+    @JmsListener(destination = "${queue.staffDailyTaskSupervisions}")
+    @Transactional
+    @Override
+    public void subscribeStaffDailyTaskSupervisions(String staffDailyTaskSupervisionStr) throws JsonProcessingException {
+        try {
+            log.info("subscribeStaffDailyTaskSupervisions {}  " , staffDailyTaskSupervisionStr);
+            SchoolDataPublishPayloadDTO<List<StaffDailyAttendanceTaskSupervisionDTO>> publishPayloadDTO = objectMapper.readValue(staffDailyTaskSupervisionStr, new TypeReference<>() {
+            });
+            List<StaffDailyAttendanceTaskSupervisionDTO> allStaffDailyTaskSupervisionDTOS = publishPayloadDTO.getData();
+
+            log.info("allStaffDailyTaskSupervisionDTOS {} " , allStaffDailyTaskSupervisionDTOS.size());
+
+            AcademicTerm academicTerm = academicTermRepository.findById(publishPayloadDTO.getAcademicTerm()).orElseThrow(() -> new TelaNotFoundException("Term " + publishPayloadDTO.getAcademicTerm() + " not found"));
+
+            Optional<IdProjection> optionalIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(publishPayloadDTO.getSchoolTelaNumber(), Status.DELETED);
+
+            if (optionalIdProjection.isPresent()) {
+                log.info("FOUND TELA NUMBER {} ", publishPayloadDTO.getSchoolTelaNumber());
+                IdProjection idProjection = optionalIdProjection.get();
+
+                List<StaffDailyAttendanceSupervision> existingTermStaffDailyTimeSupervisions = staffDailyAttendanceSupervisionRepository
+                        .allByTerm_School(academicTerm.getStartDate() , academicTerm.getEndDate(), idProjection.getId());
+
+                List<StaffDailyAttendanceTaskSupervision> existingTermStaffDailyTaskSupervisions = staffDailyAttendanceTaskSupervisionRepository.allIn(existingTermStaffDailyTimeSupervisions);
+
+
+                // process new task supervision
+                List<StaffDailyAttendanceTaskSupervisionDTO> allNewStaffDailyAttendanceTaskSupervisionDTO = allStaffDailyTaskSupervisionDTOS
+                        .parallelStream().filter(dto -> dto.getId().equalsIgnoreCase("")).toList();
+                List<StaffDailyAttendanceTaskSupervisionDTO> allExistingStaffDailyAttendanceTaskSupervisionDTOS = allStaffDailyTaskSupervisionDTOS.parallelStream()
+                        .filter(dto -> !dto.getId().equalsIgnoreCase("")).toList();
+
+                /// new
+                List<StaffDailyAttendanceTaskSupervisionDTO> allSavedNewStaffDailyAttendanceTaskSupervisionDTOS = allNewStaffDailyAttendanceTaskSupervisionDTO.parallelStream().map(dto -> {
+                    StaffDailyAttendanceTaskSupervision taskSupervision = StaffDailyAttendanceTaskSupervision.builder()
+                            .staffDailyAttendanceSupervision(new StaffDailyAttendanceSupervision(dto.getTimeAttendanceId()))
+                            .staffDailyTimeTableLesson(new StaffDailyTimeTableLesson(dto.getLessonTaskId()))
+                            .teachingTimeStatus(SupervisionStatus.fromString(dto.getTimeStatus()).get())
+                            .comment(dto.getSupervisionComment())
+                            .status(Status.ACTIVE)
+                            .build();
+
+                    StaffDailyAttendanceTaskSupervision save = staffDailyAttendanceTaskSupervisionRepository.save(taskSupervision);
+                    dto.setId(save.getId());
+
+                    return dto;
+                }).collect(Collectors.toList());
+
+
+                // process existing
+                List<StaffDailyAttendanceTaskSupervision> allUpdatedExistingStaffDailyAttendanceTaskSupervision = allExistingStaffDailyAttendanceTaskSupervisionDTOS.parallelStream()
+                        .flatMap(dto -> existingTermStaffDailyTaskSupervisions.parallelStream()
+                                .filter(taskSupervision -> dto.getId().equals(taskSupervision.getId()))
+                                .map(taskSupervision -> {
+                                    taskSupervision.setComment(dto.getSupervisionComment());
+                                    taskSupervision.setTeachingTimeStatus(SupervisionStatus.fromString(dto.getTimeStatus()).get());
+                                    return taskSupervision;
+                                })
+                        ).toList();
+
+                if (allUpdatedExistingStaffDailyAttendanceTaskSupervision.size() > 0) {
+                    staffDailyAttendanceTaskSupervisionRepository.saveAll(allUpdatedExistingStaffDailyAttendanceTaskSupervision);
+                }
+
+                allSavedNewStaffDailyAttendanceTaskSupervisionDTOS.addAll(allExistingStaffDailyAttendanceTaskSupervisionDTOS);
+
+                jmsTemplate.setPubSubDomain(true);
+                MQResponseDto<List<StaffDailyAttendanceTaskSupervisionDTO>> responseDto = new MQResponseDto<>();
+                responseDto.setResponseType(ResponseType.STAFF_DAILY_TASK_SUPERVISIONS);
+                responseDto.setData(allSavedNewStaffDailyAttendanceTaskSupervisionDTOS);
+                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+                log.info("PUBLISHED SAVE UPDATED STAFF_DAILY_TASK_SUPERVISIONS  for {} {} {} ",academicTerm.getTerm(), idProjection.getId() ,  allSavedNewStaffDailyAttendanceTaskSupervisionDTOS.size());
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e);
+        }
+    }
+
+    @JmsListener(destination = "${queue.schoolCoordinate}")
+    @Transactional
+    @Override
+    public void subscribeSchoolCoordinates(String schoolCoordinateStr) throws JsonProcessingException {
+        try {
+            log.info("subscribeSchoolCoordinates {}  " , schoolCoordinateStr);
+            SchoolDataPublishPayloadDTO<List<GeoCoordinateDTO>> publishPayloadDTO = objectMapper.readValue(schoolCoordinateStr, new TypeReference<>() {
+            });
+            Optional<GeoCoordinateDTO> optionalGeoCoordinateDTO = publishPayloadDTO.getData().parallelStream().findFirst();
+
+            Optional<IdProjection> optionalIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(publishPayloadDTO.getSchoolTelaNumber(), Status.DELETED);
+
+            if (optionalIdProjection.isPresent() && optionalGeoCoordinateDTO.isPresent()) {
+                GeoCoordinateDTO schoolCoordinateDTO = optionalGeoCoordinateDTO.get();
+
+                log.info("schoolCoordinateDTO {} " , schoolCoordinateDTO);
+
+                log.info("FOUND TELA NUMBER {} ", publishPayloadDTO.getSchoolTelaNumber());
+                IdProjection idProjection = optionalIdProjection.get();
+                Optional<SchoolGeoCoordinate> optionalSchoolGeoCoordinate = schoolGeoCoordinateRepository.findByStatusNotAndSchool_Id(Status.DELETED, idProjection.getId());
+
+                if (optionalSchoolGeoCoordinate.isPresent()) {
+                    SchoolGeoCoordinate schoolGeoCoordinate = optionalSchoolGeoCoordinate.get();
+                    schoolGeoCoordinate.setDisplacement((int) schoolCoordinateDTO.getMaxDisplacement());
+                    schoolGeoCoordinate.setLatitude(schoolCoordinateDTO.getLatitude());
+                    schoolGeoCoordinate.setLongtitude(schoolCoordinateDTO.getLongitude());
+                    schoolGeoCoordinate.setGeoFenceActivated(schoolCoordinateDTO.isGeoFenceActivated());
+                    schoolGeoCoordinate.setPinClockActivated(schoolCoordinateDTO.isPinClockActivated());
+                    SchoolGeoCoordinate saved = schoolGeoCoordinateRepository.save(schoolGeoCoordinate);
+                    schoolCoordinateDTO.setId(saved.getId());
+                }else{
+                    SchoolGeoCoordinate schoolGeoCoordinate = new SchoolGeoCoordinate();
+                    schoolGeoCoordinate.setStatus(Status.ACTIVE);
+                    schoolGeoCoordinate.setSchool(new School(idProjection.getId()));
+                    schoolGeoCoordinate.setDisplacement((int) schoolCoordinateDTO.getMaxDisplacement());
+                    schoolGeoCoordinate.setLatitude(schoolCoordinateDTO.getLatitude());
+                    schoolGeoCoordinate.setLongtitude(schoolCoordinateDTO.getLongitude());
+                    schoolGeoCoordinate.setGeoFenceActivated(schoolCoordinateDTO.isGeoFenceActivated());
+                    schoolGeoCoordinate.setPinClockActivated(schoolCoordinateDTO.isPinClockActivated());
+                    SchoolGeoCoordinate saved = schoolGeoCoordinateRepository.save(schoolGeoCoordinate);
+                    schoolCoordinateDTO.setId(saved.getId());
+                }
+
+
+                jmsTemplate.setPubSubDomain(true);
+                MQResponseDto<GeoCoordinateDTO> responseDto = new MQResponseDto<>();
+                responseDto.setResponseType(ResponseType.SCHOOL_COORDINATES);
+                responseDto.setData(schoolCoordinateDTO);
+                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+                log.info("PUBLISHED SAVE UPDATED SCHOOL_COORDINATES  for {} {} {} ",publishPayloadDTO.getAcademicTerm(), idProjection.getId() ,  schoolCoordinateDTO);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e);
+        }
+    }
 
 
 }
