@@ -16,7 +16,7 @@ public interface SynchronizeMobileDataService {
     void publishStaffDailyTimeAttendanceSupervision(School school, AcademicTerm academicTerm , String dateParam);
     void publishStaffDailyTimetableTaskSupervision(School school, AcademicTerm academicTerm , String dateParam);
 
-    void publishStaffDailyTimetablespublishStaffDailyTimetables(School school, AcademicTerm academicTerm , String dateParam);
+    void publishStaffDailyTimetables(School school, AcademicTerm academicTerm , String dateParam);
     void publishDistricts(School school);
     void publishSchoolTimetables(School school, AcademicTerm academicTerm);
 
