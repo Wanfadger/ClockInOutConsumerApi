@@ -1,5 +1,15 @@
 package com.planetsystems.tela.api.ClockInOutConsumer.model.enums;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.util.Arrays;
+import java.util.Optional;
+
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
 public enum SupervisionStatus { 
     TAUGHT("Taught in time"),
     NOT_TAUGHT("Not Taught"),
@@ -8,24 +18,8 @@ public enum SupervisionStatus {
 
     private String supervision;
 
-    SupervisionStatus(String supervision) {
-        this.supervision = supervision;
-    }
 
-    public String getSupervision() {
-        return supervision;
-    }
-
-    public void setSupervision(String supervision) {
-        this.supervision = supervision;
-    }
-
-    public static SupervisionStatus getSupervision(String supervision){
-        for (SupervisionStatus supervisionStatus : SupervisionStatus.values()) {
-            if (supervisionStatus.getSupervision().equalsIgnoreCase(supervision)) {
-                return supervisionStatus;
-            }
-        }
-        return null;
+    public static Optional<SupervisionStatus> fromString(String supervisionStr){
+        return Arrays.stream(SupervisionStatus.values()).parallel().filter(supervisionStatus ->  supervisionStatus.supervision.equalsIgnoreCase(supervisionStr)).findFirst();
     }
 }
