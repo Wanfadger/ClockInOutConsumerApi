@@ -54,4 +54,7 @@ public class StaffDailyAttendanceSupervision extends ParentEntity{
     @OneToMany(cascade = CascadeType.ALL , fetch = FetchType.LAZY , targetEntity = StaffDailyAttendanceTaskSupervision.class , mappedBy = "staffDailyAttendanceSupervision")
     private Set<StaffDailyAttendanceTaskSupervision> staffDailyAttendanceTaskSupervisions = new HashSet<>();
 
+    public StaffDailyAttendanceSupervision(String id) {
+        super(id);
+    }
 }
