@@ -1,12 +1,13 @@
 package com.planetsystems.tela.api.ClockInOutConsumer.dto.timetable;
 
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Setter
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
+@SuperBuilder
 @ToString
 public class TimeTableLessonDTO {
     private String id;
