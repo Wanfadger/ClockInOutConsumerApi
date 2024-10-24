@@ -21,13 +21,13 @@ public interface StaffDailyAttendanceSupervisionRepository extends JpaRepository
             """)
     List<StaffDailyAttendanceSupervision> allByTerm_School(LocalDate termStartDate , LocalDate termEndDate ,String schoolId );
 
-    @Query("""
-            SELECT SAS FROM StaffDailyAttendanceSupervision AS SAS
-            JOIN FETCH SAS.schoolStaff AS ST
-            WHERE SAS.status <> 8 AND ST.status <> 8
-            AND ST.school.id =:schoolId AND SAS.supervisionDate =:supervisionDate
-            """)
-    List<StaffDailyAttendanceSupervision> allByTerm_School(LocalDate supervisionDate , String schoolId);
+//    @Query("""
+//            SELECT SAS FROM StaffDailyAttendanceSupervision AS SAS
+//            JOIN FETCH SAS.schoolStaff AS ST
+//            WHERE SAS.status <> 8 AND ST.status <> 8
+//            AND ST.school.id =:schoolId AND SAS.supervisionDate =:supervisionDate
+//            """)
+//    List<StaffDailyAttendanceSupervision> allByTerm_School(LocalDate supervisionDate , String schoolId);
 
     @Query("""
             SELECT SAS FROM StaffDailyAttendanceSupervision AS SAS
