@@ -8,6 +8,7 @@ import java.io.Serializable;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 public class MQResponseDto<T> implements Serializable {
 	ResponseType ResponseType;
 	T data;
