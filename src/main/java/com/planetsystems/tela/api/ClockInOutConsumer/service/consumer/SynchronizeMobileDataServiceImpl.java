@@ -508,7 +508,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
         List<LearnerHeadCountDTO> generalLearnerHeadCountDTOS = learnerEnrollmentRepository.allBySchool_term(school.getId(), academicTerm.getId()).parallelStream()
                 .map(enrollment -> {
                     LearnerHeadCountDTO learnerHeadCountDTO = LearnerHeadCountDTO.builder()
-                            .staffId(enrollment.getSchoolStaff().getId())
+                            .staffId(enrollment.getSchoolStaff()!= null? enrollment.getSchoolStaff().getId(): "-")
                             .classId(enrollment.getSchoolClass().getId())
                             .learnerType(LearnerType.GENERAL.getType())
                             .totalFemale(enrollment.getTotalGirls())
