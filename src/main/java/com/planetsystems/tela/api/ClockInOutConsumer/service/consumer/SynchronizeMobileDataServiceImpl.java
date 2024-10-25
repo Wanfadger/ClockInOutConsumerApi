@@ -426,12 +426,20 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
     @Override
     @Async
     public void publishSchoolClockIns(School school, AcademicTerm academicTerm, String dateParam) {
-        List<ClockIn> schoolDateClockIns;
+        List<ClockIn> schoolDateClockIns = new ArrayList<>();
         if ("all".equalsIgnoreCase(dateParam)) {
-            schoolDateClockIns = clockInRepository.allByTerm_SchoolWithStaff(academicTerm.getId(), school.getId());
+            try{
+                schoolDateClockIns = clockInRepository.allByTerm_SchoolWithStaff(academicTerm.getId(), school.getId());
+            } catch (Exception e) {
+                System.out.println(e);
+            }
         } else {
-            LocalDate localDate = LocalDate.parse(dateParam, TelaDatePattern.datePattern);
-            schoolDateClockIns = clockInRepository.allByDate_SchoolWithStaff(localDate, school.getId());
+            try {
+                LocalDate localDate = LocalDate.parse(dateParam, TelaDatePattern.datePattern);
+                schoolDateClockIns = clockInRepository.allByDate_SchoolWithStaff(localDate, school.getId());
+            } catch (Exception e) {
+                System.out.println(e);
+            }
         }
         List<ClockInDTO> clockInDTOS = schoolDateClockIns.parallelStream().map(clockIn -> {
 
