@@ -80,43 +80,95 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                     School school = schoolOptional.get();
                     AcademicTerm academicTerm = optionalAcademicTerm.get();
                     // school
-                    publishSchoolData(school, academicTerm);
+                    try {
+                        publishSchoolData(school, academicTerm);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());;
+                    }
 
 //                 classes
-                    publishSchoolClasses(school, academicTerm);
+                    try {
+                        publishSchoolClasses(school, academicTerm);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());;
+                    }
 //
                     // staff
-                    publishSchoolStaffs(school, academicTerm);
+                    try {
+                        publishSchoolStaffs(school, academicTerm);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());;
+                    }
 //
 //                // clockins
-                    publishSchoolClockIns(school, academicTerm, dateParam);
+                    try {
+                        publishSchoolClockIns(school, academicTerm, dateParam);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());;
+                    }
 
 //                subjects
-                    publishSubjects(school, academicTerm);
+                    try {
+                        publishSubjects(school, academicTerm);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());;
+                    }
 
                     //publishLearnerEnrollments
-                    publishLearnerEnrollments(school, academicTerm);
+                    try {
+                        publishLearnerEnrollments(school, academicTerm);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());;
+                    }
 
                     // publishSchoolTimetables
-                    publishSchoolTimetables(school, academicTerm);
+                    try {
+                        publishSchoolTimetables(school, academicTerm);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());;
+                    }
 
                     //publishStaffDailyTimetables
-                    publishStaffDailyTimetables(school, academicTerm, dateParam);
+                    try {
+                        publishStaffDailyTimetables(school, academicTerm, dateParam);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());;
+                    }
 
                     //publishLearnerAttendance
-                    publishLearnerAttendance(school, academicTerm, dateParam);
+                    try {
+                        publishLearnerAttendance(school, academicTerm, dateParam);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());;
+                    }
 
                     //publishSchoolClockOuts
-                    publishSchoolClockOuts(school, academicTerm, dateParam);
+                    try {
+                        publishSchoolClockOuts(school, academicTerm, dateParam);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());;
+                    }
 
                     //publishStaffDailyTimeAttendance
-                    publishStaffDailyTimeAttendanceSupervision(school, academicTerm, dateParam);
+                    try {
+                        publishStaffDailyTimeAttendanceSupervision(school, academicTerm, dateParam);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());;
+                    }
 
                     //publishStaffDailyTimetableTaskSupervision
-                    publishStaffDailyTimetableTaskSupervision(school, academicTerm, dateParam);
-                    //publishDistricts
-                    publishDistricts(school);
+                    try {
+                        publishStaffDailyTimetableTaskSupervision(school, academicTerm, dateParam);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());;
+                    }
 
+                    //publishDistricts
+                    try {
+                        publishDistricts(school);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());;
+                    }
                 }
             }
         } catch (Exception e) {
