@@ -522,7 +522,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
         List<LearnerHeadCountDTO> snLearnerHeadCountDTOS = snLearnerEnrollmentRepository.allBySchool_term(school.getId(), academicTerm.getId()).parallelStream()
                 .map(enrollment -> {
                     LearnerHeadCountDTO learnerHeadCountDTO = LearnerHeadCountDTO.builder()
-                            .staffId(enrollment.getSchoolStaff().getId())
+                            .staffId(enrollment.getSchoolStaff() != null? enrollment.getSchoolStaff().getId() : "-")
                             .classId(enrollment.getSchoolClass().getId())
                             .learnerType(LearnerType.SPECIAL_NEEDS.getType())
                             .totalFemale(enrollment.getTotalGirls())
@@ -568,7 +568,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
 
         List<LearnerAttendanceDTO> generalLearnerAttendanceDTOS = learnerAttendanceList.parallelStream().map(learnerAttendance -> {
                     LearnerAttendanceDTO learnerAttendanceDTO = LearnerAttendanceDTO.builder()
-                            .staffId(learnerAttendance.getSchoolStaff().getId())
+                            .staffId(learnerAttendance.getSchoolStaff() != null? learnerAttendance.getSchoolStaff().getId(): "-")
                             .classId(learnerAttendance.getSchoolClass().getId())
                             .comment(learnerAttendance.getComment())
                             .maleAbsent(learnerAttendance.getBoysAbsent())
@@ -584,7 +584,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
 
         List<LearnerAttendanceDTO> snLearnerAttendanceDTOS = snLearnerAttendanceList.parallelStream().map(learnerAttendance -> {
                     LearnerAttendanceDTO snLearnerAttendanceDTO = LearnerAttendanceDTO.builder()
-                            .staffId(learnerAttendance.getSchoolStaff().getId())
+                            .staffId(learnerAttendance.getSchoolStaff() != null ? learnerAttendance.getSchoolStaff().getId(): "-")
                             .classId(learnerAttendance.getSchoolClass().getId())
                             .comment(learnerAttendance.getComment())
                             .maleAbsent(learnerAttendance.getBoysAbsent())
@@ -636,7 +636,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
 
             StaffDailyTimeAttendanceDTO staffDailyTimeAttendanceDTO = StaffDailyTimeAttendanceDTO.builder()
                     .id(attendanceSupervision.getId())
-                    .staffId(attendanceSupervision.getSchoolStaff().getId())
+                    .staffId(attendanceSupervision.getSchoolStaff() != null ? attendanceSupervision.getSchoolStaff().getId() : "-")
                     .supervisorId(attendanceSupervision.getSupervisor().getId())
                     .supervisorComment(attendanceSupervision.getComment())
                     .supervisionStatus(attendanceSupervision.getAttendanceStatus().getAttendance())
@@ -728,7 +728,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                             .lessonDay(tLesson.getLessonDay().getDay())
                             .id(tLesson.getId())
                             .subjectId(tLesson.getSubject().getId())
-                            .staffId(tLesson.getSchoolStaff().getId())
+                            .staffId(tLesson.getSchoolStaff() != null ? tLesson.getSchoolStaff().getId() : "-" )
                             .build();
                     return lessonDTO;
                 }).toList();
@@ -792,7 +792,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                                 .endTime(dailyLesson.getEndTime().format(TelaDatePattern.timePattern24))
                                 .actionStatus(dailyLesson.getDailyTimeTableLessonStatus().getAttendance())
                                 .submissionDate(dailyLesson.getLessonDate().format(TelaDatePattern.datePattern))
-                                .staffId(dailyTimeTable.getSchoolStaff().getId())
+                                .staffId(dailyTimeTable.getSchoolStaff() != null ? dailyTimeTable.getSchoolStaff().getId() : "-")
                                 .comment(dailyTimeTable.getComment())
                                 .build();
                         return dto;
@@ -817,7 +817,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                                 .endTime(dailyLesson.getEndTime().format(TelaDatePattern.timePattern24))
                                 .actionStatus(dailyLesson.getDailyTimeTableLessonStatus().getAttendance())
                                 .submissionDate(dailyLesson.getLessonDate().format(TelaDatePattern.datePattern))
-                                .staffId(dailyTimeTable.getSchoolStaff().getId())
+                                .staffId(dailyTimeTable.getSchoolStaff() != null ? dailyTimeTable.getSchoolStaff().getId() : "-")
                                 .comment(dailyTimeTable.getComment())
                                 .build();
                         return dto;
@@ -930,7 +930,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                             .clockInId(clockIn.getId())
                             .telaSchoolNumber(school.getTelaSchoolUID())
                             .academicTermId(academicTerm.getId())
-                            .staffId(clockIn.getSchoolStaff().getId())
+                            .staffId(clockIn.getSchoolStaff() != null ? clockIn.getSchoolStaff().getId() : "-")
                             .id(clockOut.getId())
                             .clockOutType(clockOut.getClockOutType())
                             .clockOutDateTime(clockOutDateTime.format(TelaDatePattern.dateTimePattern24))
