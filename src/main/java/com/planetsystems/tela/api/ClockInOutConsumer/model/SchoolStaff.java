@@ -11,13 +11,13 @@ import java.io.Serializable;
 import java.util.*;
 
 
-@NamedEntityGraph(name = "staff-with-details-graph" , attributeNodes = {
-		@NamedAttributeNode("generalUserDetail"),
-		@NamedAttributeNode(value = "school" , subgraph = "district-sub-graph")} ,
-  subgraphs = {
-		@NamedSubgraph(name = "district-sub-graph" , attributeNodes = @NamedAttributeNode("district"))
-  }
-)
+//@NamedEntityGraph(name = "staff-with-details-graph" , attributeNodes = {
+//		@NamedAttributeNode("generalUserDetail"),
+//		@NamedAttributeNode(value = "school" , subgraph = "district-sub-graph")} ,
+//  subgraphs = {
+//		@NamedSubgraph(name = "district-sub-graph" , attributeNodes = @NamedAttributeNode("district"))
+//  }
+//)
 
 
 
