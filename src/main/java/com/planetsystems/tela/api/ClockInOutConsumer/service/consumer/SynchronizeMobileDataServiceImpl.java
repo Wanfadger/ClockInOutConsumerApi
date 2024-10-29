@@ -69,46 +69,47 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
             log.info("synchronizeMobileData started for {}", queryParam);
             IdProjection schoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(telaSchoolNumber, Status.DELETED).orElseThrow(() -> new TelaNotFoundException("School with " + telaSchoolNumber + " not found"));
 
-                School school = schoolRepository.findByStatusNotAndId(Status.DELETED, schoolIdProjection.getId()).orElseThrow(() -> new TelaNotFoundException("School not found"));
-                AcademicTerm academicTerm = academicTermRepository.activeAcademicTerm(Status.ACTIVE).orElseThrow(() -> new TelaNotFoundException("Active term not found"));
-                // school information
-                    // school
-                    publishSchoolData(school, academicTerm);
+            School school = schoolRepository.findByStatusNotAndId(Status.DELETED, schoolIdProjection.getId()).orElseThrow(() -> new TelaNotFoundException("School not found"));
+            AcademicTerm academicTerm = academicTermRepository.activeAcademicTerm(Status.ACTIVE).orElseThrow(() -> new TelaNotFoundException("Active term not found"));
+            // school information
+            // school
+            publishSchoolData(school, academicTerm);
 
 //                 classes
-                    publishSchoolClasses(school, academicTerm);
+            publishSchoolClasses(school, academicTerm);
 
-                    // staff
-                    publishSchoolStaffs(school, academicTerm);
-
-                // clockins
-                    publishSchoolClockIns(school, academicTerm, dateParam);
+            // staff
+            publishSchoolStaffs(school, academicTerm);
 
 //                subjects
-                    publishSubjects(school, academicTerm);
+            publishSubjects(school, academicTerm);
 
-                    //publishLearnerEnrollments
-                    publishLearnerEnrollments(school, academicTerm);
+            //publishLearnerEnrollments
+            publishLearnerEnrollments(school, academicTerm);
 
-                    // publishSchoolTimetables
-                    publishSchoolTimetables(school, academicTerm);
+            // publishSchoolTimetables
+            publishSchoolTimetables(school, academicTerm);
 
-                    //publishStaffDailyTimetables
-                    publishStaffDailyTimetables(school, academicTerm, dateParam);
+            //publishStaffDailyTimetables
+            publishStaffDailyTimetables(school, academicTerm, dateParam);
 
-                    //publishLearnerAttendance
-                    publishLearnerAttendance(school, academicTerm, dateParam);
+            //publishLearnerAttendance
+            publishLearnerAttendance(school, academicTerm, dateParam);
 
-                    //publishSchoolClockOuts
-                    publishSchoolClockOuts(school, academicTerm, dateParam);
 
-                    //publishStaffDailyTimeAttendance
-                    publishStaffDailyTimeAttendanceSupervision(school, academicTerm, dateParam);
+            //publishStaffDailyTimeAttendance
+            publishStaffDailyTimeAttendanceSupervision(school, academicTerm, dateParam);
 
-                    //publishStaffDailyTimetableTaskSupervision
-                    publishStaffDailyTimetableTaskSupervision(school, academicTerm, dateParam);
-                    //publishDistricts
-                    publishDistricts(school);
+            //publishStaffDailyTimetableTaskSupervision
+            publishStaffDailyTimetableTaskSupervision(school, academicTerm, dateParam);
+            //publishDistricts
+            publishDistricts(school);
+
+            // clockins
+            publishSchoolClockIns(school, academicTerm, dateParam);
+
+            //publishSchoolClockOuts
+            publishSchoolClockOuts(school, academicTerm, dateParam);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -190,7 +191,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                     }).sorted(Comparator.comparing(ClassDTO::getName))
                     .collect(Collectors.toList());
 
-            if (classDTOS.isEmpty()){
+            if (classDTOS.isEmpty()) {
                 List<SchoolClass> defaultClasses = this.generateDefaultClasses(school.getSchoolLevel())
                         .stream().map(schoolClass -> {
                             schoolClass.setCreatedDateTime(LocalDateTime.now());
@@ -204,7 +205,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                 // create new
                 schoolClassRepository.saveAll(defaultClasses);
 
-                classDTOS =  schoolClassRepository
+                classDTOS = schoolClassRepository
                         .findAllByStatusNotAndAcademicTerm_IdAndSchool_Id(Status.DELETED, academicTerm.getId(), school.getId())
                         .parallelStream().map(schoolClass -> {
                             ClassDTO dto = new ClassDTO();
@@ -241,7 +242,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
         IntStream secStream = IntStream.rangeClosed(1, 6);
         IntStream caStream = IntStream.rangeClosed(1, 2);
 
-        switch (level){
+        switch (level) {
             case PRIMARY:
                 List<SchoolClass> pri = priStream.mapToObj(i -> {
                     SchoolClass dto = new SchoolClass();
@@ -418,8 +419,8 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
     @Async
     public void publishSchoolClockIns(School school, AcademicTerm academicTerm, String dateParam) {
         List<ClockInProjection> schoolDateClockIns;
-        System.out.println("school "+school.getTelaSchoolUID());
-        System.out.println("academicTerm "+academicTerm.getId());
+        System.out.println("school " + school.getTelaSchoolUID());
+        System.out.println("academicTerm " + academicTerm.getId());
         if ("all".equalsIgnoreCase(dateParam)) {
             schoolDateClockIns = clockInRepository.nativeAllByTerm_School(academicTerm.getId(), school.getId());
         } else {
@@ -427,8 +428,8 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
             schoolDateClockIns = clockInRepository.nativeAllByDate_School(localDate, school.getId());
         }
 
-        System.out.println("schoolDateClockIns "+schoolDateClockIns.size());
-        List<ClockInDTO> clockInDTOS =  schoolDateClockIns.parallelStream().map(clockIn -> {
+        System.out.println("schoolDateClockIns " + schoolDateClockIns.size());
+        List<ClockInDTO> clockInDTOS = schoolDateClockIns.parallelStream().map(clockIn -> {
 
                     LocalDateTime clockInDateTime = LocalDateTime.of(clockIn.getClockInDate(), clockIn.getClockInTime());
 
@@ -605,9 +606,9 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
     @Override
     @Async
     public void publishStaffDailyTimeAttendanceSupervision(School school, AcademicTerm academicTerm, String dateParam) {
-        log.info("publishStaffDailyTimeAttendanceSupervision {} " , dateParam);
-        log.info("AcademicTerm {} " , school.getId());
-        log.info("School {} " , academicTerm);
+        log.info("publishStaffDailyTimeAttendanceSupervision {} ", dateParam);
+        log.info("AcademicTerm {} ", school.getId());
+        log.info("School {} ", academicTerm);
         List<StaffDailyAttendanceSupervision> staffDailyAttendanceSupervisions;
         if ("all".equalsIgnoreCase(dateParam) || dateParam == null) {
             staffDailyAttendanceSupervisions = staffDailyAttendanceSupervisionRepository.allByTerm_School(academicTerm.getStartDate(), academicTerm.getEndDate(), school.getId());
@@ -738,7 +739,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                 e.printStackTrace();
                 System.out.println(e);
             }
-        }else{
+        } else {
             try {
                 jmsTemplate.setPubSubDomain(true);
                 MQResponseDto<TimetableDTO> responseDto = new MQResponseDto<>();
