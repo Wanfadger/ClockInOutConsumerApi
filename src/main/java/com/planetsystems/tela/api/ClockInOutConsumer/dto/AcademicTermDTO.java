@@ -10,6 +10,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@ToString
 public class AcademicTermDTO implements Serializable {
     private String id;
     private String name;
