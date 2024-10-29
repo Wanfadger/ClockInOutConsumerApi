@@ -3,6 +3,7 @@ package com.planetsystems.tela.api.ClockInOutConsumer.service.consumer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.planetsystems.tela.api.ClockInOutConsumer.Repository.*;
+import com.planetsystems.tela.api.ClockInOutConsumer.Repository.projections.ClockInProjection;
 import com.planetsystems.tela.api.ClockInOutConsumer.Repository.projections.IdProjection;
 import com.planetsystems.tela.api.ClockInOutConsumer.dto.*;
 import com.planetsystems.tela.api.ClockInOutConsumer.dto.supervision.StaffDailyAttendanceTaskSupervisionDTO;
@@ -66,29 +67,21 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
 
 
             log.info("synchronizeMobileData started for {}", queryParam);
+            IdProjection schoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(telaSchoolNumber, Status.DELETED).orElseThrow(() -> new TelaNotFoundException("School with " + telaSchoolNumber + " not found"));
 
-
-            Optional<IdProjection> schoolIdByTelaNumberOptional = schoolRepository.findByTelaSchoolUIDAndStatusNot(telaSchoolNumber, Status.DELETED);
-
-            if (schoolIdByTelaNumberOptional.isPresent()) {
-                IdProjection schoolIdProjection = schoolIdByTelaNumberOptional.get();
-                Optional<School> schoolOptional = schoolRepository.findByStatusNotAndId(Status.DELETED, schoolIdProjection.getId());
-                Optional<AcademicTerm> optionalAcademicTerm = academicTermRepository.activeAcademicTerm(Status.ACTIVE);
+                School school = schoolRepository.findByStatusNotAndId(Status.DELETED, schoolIdProjection.getId()).orElseThrow(() -> new TelaNotFoundException("School not found"));
+                AcademicTerm academicTerm = academicTermRepository.activeAcademicTerm(Status.ACTIVE).orElseThrow(() -> new TelaNotFoundException("Active term not found"));
                 // school information
-
-                if (schoolOptional.isPresent() && optionalAcademicTerm.isPresent()) {
-                    School school = schoolOptional.get();
-                    AcademicTerm academicTerm = optionalAcademicTerm.get();
                     // school
                     publishSchoolData(school, academicTerm);
 
 //                 classes
                     publishSchoolClasses(school, academicTerm);
-//
+
                     // staff
                     publishSchoolStaffs(school, academicTerm);
-//
-//                // clockins
+
+                // clockins
                     publishSchoolClockIns(school, academicTerm, dateParam);
 
 //                subjects
@@ -117,8 +110,6 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                     //publishDistricts
                     publishDistricts(school);
 
-                }
-            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -426,14 +417,18 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
     @Override
     @Async
     public void publishSchoolClockIns(School school, AcademicTerm academicTerm, String dateParam) {
-        List<ClockIn> schoolDateClockIns;
+        List<ClockInProjection> schoolDateClockIns;
+        System.out.println("school "+school.getTelaSchoolUID());
+        System.out.println("academicTerm "+academicTerm.getId());
         if ("all".equalsIgnoreCase(dateParam)) {
-            schoolDateClockIns = clockInRepository.allByTerm_SchoolWithStaff(academicTerm.getId(), school.getId());
+            schoolDateClockIns = clockInRepository.nativeAllByTerm_School(academicTerm.getId(), school.getId());
         } else {
             LocalDate localDate = LocalDate.parse(dateParam, TelaDatePattern.datePattern);
-            schoolDateClockIns = clockInRepository.allByDate_SchoolWithStaff(localDate, school.getId());
+            schoolDateClockIns = clockInRepository.nativeAllByDate_School(localDate, school.getId());
         }
-        List<ClockInDTO> clockInDTOS = schoolDateClockIns.parallelStream().map(clockIn -> {
+
+        System.out.println("schoolDateClockIns "+schoolDateClockIns.size());
+        List<ClockInDTO> clockInDTOS =  schoolDateClockIns.parallelStream().map(clockIn -> {
 
                     LocalDateTime clockInDateTime = LocalDateTime.of(clockIn.getClockInDate(), clockIn.getClockInTime());
 
@@ -442,7 +437,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                             .displacement(clockIn.getDisplacement())
                             .clockInDateTime(clockInDateTime.format(TelaDatePattern.dateTimePattern24))
                             .clockInType(clockIn.getClockinType())
-                            .staffId(clockIn.getSchoolStaff().getId())
+                            .staffId(clockIn.getStaffId())
                             .academicTermId(academicTerm.getId())
                             .longitude(clockIn.getLongitude())
                             .latitude(clockIn.getLatitude())
