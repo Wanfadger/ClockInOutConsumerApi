@@ -1,35 +1,44 @@
 package com.planetsystems.tela.api.ClockInOutConsumer.Repository;
 
+import com.planetsystems.tela.api.ClockInOutConsumer.Repository.projections.ClockInProjection;
+import com.planetsystems.tela.api.ClockInOutConsumer.dto.ClockInDTO;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.ClockIn;
+import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.ClockedStatus;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.Status;
+import com.planetsystems.tela.api.ClockInOutConsumer.utils.TelaDatePattern;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface ClockInRepository extends JpaRepository<ClockIn, String> {
 
-    @Query(value = """
-            SELECT CL FROM ClockIns AS CL
-            JOIN FETCH CL.schoolStaff AS ST
-            JOIN FETCH ST.generalUserDetail AS GD
-            WHERE CL.status <> 8 AND ST.status <> 8 AND GD.status <> 8
-            AND CL.clockInDate =:clockInDate AND CL.school.id =:schoolId
-            """)
-    List<ClockIn> allByDate_SchoolWithStaff(LocalDate clockInDate, String schoolId);
+//    @Query(value = """
+//            SELECT CL FROM ClockIns AS CL
+//            JOIN FETCH CL.schoolStaff AS ST
+//            JOIN FETCH ST.generalUserDetail AS GD
+//            WHERE CL.status <> 8 AND ST.status <> 8 AND GD.status <> 8
+//            AND CL.clockInDate =:clockInDate AND CL.school.id =:schoolId
+//            """)
+//    List<ClockIn> allByDate_SchoolWithStaff(LocalDate clockInDate, String schoolId);
+//
+//
+//    @Query(value = """
+//            SELECT CL FROM ClockIns AS CL
+//            JOIN FETCH CL.schoolStaff AS ST
+//            JOIN FETCH ST.generalUserDetail AS GD
+//            WHERE CL.status <> 8 AND ST.status <> 8 AND GD.status <> 8
+//            AND CL.academicTerm.id =:termId AND CL.school.id =:schoolId
+//            """)
+//    List<ClockIn> allByTerm_SchoolWithStaff(String termId, String schoolId);
 
-    @Query(value = """
-            SELECT CL FROM ClockIns AS CL
-            JOIN FETCH CL.schoolStaff AS ST
-            JOIN FETCH ST.generalUserDetail AS GD
-            WHERE CL.status <> 8 AND ST.status <> 8 AND GD.status <> 8
-            AND CL.academicTerm.id =:termId AND CL.school.id =:schoolId
-            """)
-    List<ClockIn> allByTerm_SchoolWithStaff(String termId, String schoolId);
 
     @Query(value = """
             SELECT CL FROM ClockIns AS CL
@@ -37,6 +46,30 @@ public interface ClockInRepository extends JpaRepository<ClockIn, String> {
             AND CL.academicTerm.id =:termId AND CL.school.id =:schoolId
             """)
     List<ClockIn> allByTerm_School(String termId, String schoolId);
+
+    @Query(value = """
+            select cl."id" as id ,cl."clockInDate" as clockInDate,cl."clockInTime" as clockInTime ,cl."clockedStatus" as clockedStatus,cl."clockinType" as clockinType ,cl."comment" as comment,
+            cl."createdDateTime" as createdDateTime,
+            cl."displacement" as displacement ,cl."latitude" as latitude,cl."longitude" as longitude,cl."schoolStaff_id" as staffId,cl."status" as status 
+            from "ClockIns" as  cl where cl."status"<>8 and cl."academicTerm_id"=:termId and cl."school_id"=:schoolId
+                        """, nativeQuery = true)
+    List<ClockInProjection> nativeAllByTerm_School(String termId, String schoolId);
+
+
+    @Query(value = """
+            SELECT CL FROM ClockIns AS CL
+            WHERE CL.status <> 8
+            AND CL.clockInDate =:clockInDate AND CL.school.id =:schoolId
+            """)
+    List<ClockIn> allByDate_School(LocalDate clockInDate, String schoolId);
+
+    @Query(value = """
+            select cl."id" as id ,cl."clockInDate" as clockInDate,cl."clockInTime" as clockInTime ,cl."clockedStatus" as clockedStatus,cl."clockinType" as clockinType ,cl."comment" as comment,
+            cl."createdDateTime" as createdDateTime,
+            cl."displacement" as displacement ,cl."latitude" as latitude,cl."longitude" as longitude,cl."schoolStaff_id" as staffId,cl."status" as status 
+            from "ClockIns" as  cl where cl."status"<>8 and cl."clockInDate"=:clockInDate and cl."school_id"=:schoolId
+                        """, nativeQuery = true)
+    List<ClockInProjection> nativeAllByDate_School(LocalDate clockInDate, String schoolId);
 
 
     @Query(value = """
