@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -17,7 +19,6 @@ import java.time.LocalTime;
 @Getter
 @NoArgsConstructor
 @SuperBuilder
-@ToString
 public class ClockIn extends ParentEntity {
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "academicTerm_id")

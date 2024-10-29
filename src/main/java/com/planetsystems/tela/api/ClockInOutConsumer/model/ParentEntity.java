@@ -20,6 +20,7 @@ import java.time.*;
 @Setter
 @Getter
 @SuperBuilder
+@ToString
 public class ParentEntity implements Serializable {
 
 	@GeneratedValue(generator = "system-uuid")

@@ -3,6 +3,7 @@ package com.planetsystems.tela.api.ClockInOutConsumer.service.consumer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.planetsystems.tela.api.ClockInOutConsumer.Repository.*;
+import com.planetsystems.tela.api.ClockInOutConsumer.Repository.projections.ClockInProjection;
 import com.planetsystems.tela.api.ClockInOutConsumer.Repository.projections.IdProjection;
 import com.planetsystems.tela.api.ClockInOutConsumer.dto.*;
 import com.planetsystems.tela.api.ClockInOutConsumer.dto.supervision.StaffDailyAttendanceTaskSupervisionDTO;
@@ -66,111 +67,50 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
 
 
             log.info("synchronizeMobileData started for {}", queryParam);
+            IdProjection schoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(telaSchoolNumber, Status.DELETED).orElseThrow(() -> new TelaNotFoundException("School with " + telaSchoolNumber + " not found"));
 
-
-            Optional<IdProjection> schoolIdByTelaNumberOptional = schoolRepository.findByTelaSchoolUIDAndStatusNot(telaSchoolNumber, Status.DELETED);
-
-            if (schoolIdByTelaNumberOptional.isPresent()) {
-                IdProjection schoolIdProjection = schoolIdByTelaNumberOptional.get();
-                Optional<School> schoolOptional = schoolRepository.findByStatusNotAndId(Status.DELETED, schoolIdProjection.getId());
-                Optional<AcademicTerm> optionalAcademicTerm = academicTermRepository.activeAcademicTerm(Status.ACTIVE);
-                // school information
-
-                if (schoolOptional.isPresent() && optionalAcademicTerm.isPresent()) {
-                    School school = schoolOptional.get();
-                    AcademicTerm academicTerm = optionalAcademicTerm.get();
-                    // school
-                    try {
-                        publishSchoolData(school, academicTerm);
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());;
-                    }
+            School school = schoolRepository.findByStatusNotAndId(Status.DELETED, schoolIdProjection.getId()).orElseThrow(() -> new TelaNotFoundException("School not found"));
+            AcademicTerm academicTerm = academicTermRepository.activeAcademicTerm(Status.ACTIVE).orElseThrow(() -> new TelaNotFoundException("Active term not found"));
+            // school information
+            // school
+            publishSchoolData(school, academicTerm);
 
 //                 classes
-                    try {
-                        publishSchoolClasses(school, academicTerm);
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());;
-                    }
-//
-                    // staff
-                    try {
-                        publishSchoolStaffs(school, academicTerm);
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());;
-                    }
-//
-//                // clockins
-                    try {
-                        publishSchoolClockIns(school, academicTerm, dateParam);
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());;
-                    }
+            publishSchoolClasses(school, academicTerm);
+
+            // staff
+            publishSchoolStaffs(school, academicTerm);
 
 //                subjects
-                    try {
-                        publishSubjects(school, academicTerm);
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());;
-                    }
+            publishSubjects(school, academicTerm);
 
-                    //publishLearnerEnrollments
-                    try {
-                        publishLearnerEnrollments(school, academicTerm);
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());;
-                    }
+            //publishLearnerEnrollments
+            publishLearnerEnrollments(school, academicTerm);
 
-                    // publishSchoolTimetables
-                    try {
-                        publishSchoolTimetables(school, academicTerm);
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());;
-                    }
+            // publishSchoolTimetables
+            publishSchoolTimetables(school, academicTerm);
 
-                    //publishStaffDailyTimetables
-                    try {
-                        publishStaffDailyTimetables(school, academicTerm, dateParam);
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());;
-                    }
+            //publishStaffDailyTimetables
+            publishStaffDailyTimetables(school, academicTerm, dateParam);
 
-                    //publishLearnerAttendance
-                    try {
-                        publishLearnerAttendance(school, academicTerm, dateParam);
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());;
-                    }
+            //publishLearnerAttendance
+            publishLearnerAttendance(school, academicTerm, dateParam);
 
-                    //publishSchoolClockOuts
-                    try {
-                        publishSchoolClockOuts(school, academicTerm, dateParam);
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());;
-                    }
 
-                    //publishStaffDailyTimeAttendance
-                    try {
-                        publishStaffDailyTimeAttendanceSupervision(school, academicTerm, dateParam);
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());;
-                    }
+            //publishStaffDailyTimeAttendance
+            publishStaffDailyTimeAttendanceSupervision(school, academicTerm, dateParam);
 
-                    //publishStaffDailyTimetableTaskSupervision
-                    try {
-                        publishStaffDailyTimetableTaskSupervision(school, academicTerm, dateParam);
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());;
-                    }
+            //publishStaffDailyTimetableTaskSupervision
+            publishStaffDailyTimetableTaskSupervision(school, academicTerm, dateParam);
+            //publishDistricts
+            publishDistricts(school);
 
-                    //publishDistricts
-                    try {
-                        publishDistricts(school);
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());;
-                    }
-                }
-            }
+            // clockins
+            publishSchoolClockIns(school, academicTerm, dateParam);
+
+            //publishSchoolClockOuts
+            publishSchoolClockOuts(school, academicTerm, dateParam);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -251,7 +191,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                     }).sorted(Comparator.comparing(ClassDTO::getName))
                     .collect(Collectors.toList());
 
-            if (classDTOS.isEmpty()){
+            if (classDTOS.isEmpty()) {
                 List<SchoolClass> defaultClasses = this.generateDefaultClasses(school.getSchoolLevel())
                         .stream().map(schoolClass -> {
                             schoolClass.setCreatedDateTime(LocalDateTime.now());
@@ -265,7 +205,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                 // create new
                 schoolClassRepository.saveAll(defaultClasses);
 
-                classDTOS =  schoolClassRepository
+                classDTOS = schoolClassRepository
                         .findAllByStatusNotAndAcademicTerm_IdAndSchool_Id(Status.DELETED, academicTerm.getId(), school.getId())
                         .parallelStream().map(schoolClass -> {
                             ClassDTO dto = new ClassDTO();
@@ -302,7 +242,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
         IntStream secStream = IntStream.rangeClosed(1, 6);
         IntStream caStream = IntStream.rangeClosed(1, 2);
 
-        switch (level){
+        switch (level) {
             case PRIMARY:
                 List<SchoolClass> pri = priStream.mapToObj(i -> {
                     SchoolClass dto = new SchoolClass();
@@ -478,21 +418,17 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
     @Override
     @Async
     public void publishSchoolClockIns(School school, AcademicTerm academicTerm, String dateParam) {
-        List<ClockIn> schoolDateClockIns = new ArrayList<>();
+        List<ClockInProjection> schoolDateClockIns;
+        System.out.println("school " + school.getTelaSchoolUID());
+        System.out.println("academicTerm " + academicTerm.getId());
         if ("all".equalsIgnoreCase(dateParam)) {
-            try{
-                schoolDateClockIns = clockInRepository.allByTerm_SchoolWithStaff(academicTerm.getId(), school.getId());
-            } catch (Exception e) {
-                System.out.println(e);
-            }
+            schoolDateClockIns = clockInRepository.nativeAllByTerm_School(academicTerm.getId(), school.getId());
         } else {
-            try {
-                LocalDate localDate = LocalDate.parse(dateParam, TelaDatePattern.datePattern);
-                schoolDateClockIns = clockInRepository.allByDate_SchoolWithStaff(localDate, school.getId());
-            } catch (Exception e) {
-                System.out.println(e);
-            }
+            LocalDate localDate = LocalDate.parse(dateParam, TelaDatePattern.datePattern);
+            schoolDateClockIns = clockInRepository.nativeAllByDate_School(localDate, school.getId());
         }
+
+        System.out.println("schoolDateClockIns " + schoolDateClockIns.size());
         List<ClockInDTO> clockInDTOS = schoolDateClockIns.parallelStream().map(clockIn -> {
 
                     LocalDateTime clockInDateTime = LocalDateTime.of(clockIn.getClockInDate(), clockIn.getClockInTime());
@@ -502,7 +438,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                             .displacement(clockIn.getDisplacement())
                             .clockInDateTime(clockInDateTime.format(TelaDatePattern.dateTimePattern24))
                             .clockInType(clockIn.getClockinType())
-                            .staffId(clockIn.getSchoolStaff().getId())
+                            .staffId(clockIn.getStaffId())
                             .academicTermId(academicTerm.getId())
                             .longitude(clockIn.getLongitude())
                             .latitude(clockIn.getLatitude())
@@ -560,7 +496,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
         List<LearnerHeadCountDTO> generalLearnerHeadCountDTOS = learnerEnrollmentRepository.allBySchool_term(school.getId(), academicTerm.getId()).parallelStream()
                 .map(enrollment -> {
                     LearnerHeadCountDTO learnerHeadCountDTO = LearnerHeadCountDTO.builder()
-                            .staffId(enrollment.getSchoolStaff()!= null? enrollment.getSchoolStaff().getId(): "-")
+                            .staffId(enrollment.getSchoolStaff().getId())
                             .classId(enrollment.getSchoolClass().getId())
                             .learnerType(LearnerType.GENERAL.getType())
                             .totalFemale(enrollment.getTotalGirls())
@@ -574,7 +510,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
         List<LearnerHeadCountDTO> snLearnerHeadCountDTOS = snLearnerEnrollmentRepository.allBySchool_term(school.getId(), academicTerm.getId()).parallelStream()
                 .map(enrollment -> {
                     LearnerHeadCountDTO learnerHeadCountDTO = LearnerHeadCountDTO.builder()
-                            .staffId(enrollment.getSchoolStaff() != null? enrollment.getSchoolStaff().getId() : "-")
+                            .staffId(enrollment.getSchoolStaff().getId())
                             .classId(enrollment.getSchoolClass().getId())
                             .learnerType(LearnerType.SPECIAL_NEEDS.getType())
                             .totalFemale(enrollment.getTotalGirls())
@@ -620,7 +556,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
 
         List<LearnerAttendanceDTO> generalLearnerAttendanceDTOS = learnerAttendanceList.parallelStream().map(learnerAttendance -> {
                     LearnerAttendanceDTO learnerAttendanceDTO = LearnerAttendanceDTO.builder()
-                            .staffId(learnerAttendance.getSchoolStaff() != null? learnerAttendance.getSchoolStaff().getId(): "-")
+                            .staffId(learnerAttendance.getSchoolStaff().getId())
                             .classId(learnerAttendance.getSchoolClass().getId())
                             .comment(learnerAttendance.getComment())
                             .maleAbsent(learnerAttendance.getBoysAbsent())
@@ -636,7 +572,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
 
         List<LearnerAttendanceDTO> snLearnerAttendanceDTOS = snLearnerAttendanceList.parallelStream().map(learnerAttendance -> {
                     LearnerAttendanceDTO snLearnerAttendanceDTO = LearnerAttendanceDTO.builder()
-                            .staffId(learnerAttendance.getSchoolStaff() != null ? learnerAttendance.getSchoolStaff().getId(): "-")
+                            .staffId(learnerAttendance.getSchoolStaff().getId())
                             .classId(learnerAttendance.getSchoolClass().getId())
                             .comment(learnerAttendance.getComment())
                             .maleAbsent(learnerAttendance.getBoysAbsent())
@@ -670,9 +606,9 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
     @Override
     @Async
     public void publishStaffDailyTimeAttendanceSupervision(School school, AcademicTerm academicTerm, String dateParam) {
-        log.info("publishStaffDailyTimeAttendanceSupervision {} " , dateParam);
-        log.info("AcademicTerm {} " , school.getId());
-        log.info("School {} " , academicTerm);
+        log.info("publishStaffDailyTimeAttendanceSupervision {} ", dateParam);
+        log.info("AcademicTerm {} ", school.getId());
+        log.info("School {} ", academicTerm);
         List<StaffDailyAttendanceSupervision> staffDailyAttendanceSupervisions;
         if ("all".equalsIgnoreCase(dateParam) || dateParam == null) {
             staffDailyAttendanceSupervisions = staffDailyAttendanceSupervisionRepository.allByTerm_School(academicTerm.getStartDate(), academicTerm.getEndDate(), school.getId());
@@ -688,7 +624,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
 
             StaffDailyTimeAttendanceDTO staffDailyTimeAttendanceDTO = StaffDailyTimeAttendanceDTO.builder()
                     .id(attendanceSupervision.getId())
-                    .staffId(attendanceSupervision.getSchoolStaff() != null ? attendanceSupervision.getSchoolStaff().getId() : "-")
+                    .staffId(attendanceSupervision.getSchoolStaff().getId())
                     .supervisorId(attendanceSupervision.getSupervisor().getId())
                     .supervisorComment(attendanceSupervision.getComment())
                     .supervisionStatus(attendanceSupervision.getAttendanceStatus().getAttendance())
@@ -780,7 +716,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                             .lessonDay(tLesson.getLessonDay().getDay())
                             .id(tLesson.getId())
                             .subjectId(tLesson.getSubject().getId())
-                            .staffId(tLesson.getSchoolStaff() != null ? tLesson.getSchoolStaff().getId() : "-" )
+                            .staffId(tLesson.getSchoolStaff().getId())
                             .build();
                     return lessonDTO;
                 }).toList();
@@ -803,7 +739,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                 e.printStackTrace();
                 System.out.println(e);
             }
-        }else{
+        } else {
             try {
                 jmsTemplate.setPubSubDomain(true);
                 MQResponseDto<TimetableDTO> responseDto = new MQResponseDto<>();
@@ -844,7 +780,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                                 .endTime(dailyLesson.getEndTime().format(TelaDatePattern.timePattern24))
                                 .actionStatus(dailyLesson.getDailyTimeTableLessonStatus().getAttendance())
                                 .submissionDate(dailyLesson.getLessonDate().format(TelaDatePattern.datePattern))
-                                .staffId(dailyTimeTable.getSchoolStaff() != null ? dailyTimeTable.getSchoolStaff().getId() : "-")
+                                .staffId(dailyTimeTable.getSchoolStaff().getId())
                                 .comment(dailyTimeTable.getComment())
                                 .build();
                         return dto;
@@ -869,7 +805,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                                 .endTime(dailyLesson.getEndTime().format(TelaDatePattern.timePattern24))
                                 .actionStatus(dailyLesson.getDailyTimeTableLessonStatus().getAttendance())
                                 .submissionDate(dailyLesson.getLessonDate().format(TelaDatePattern.datePattern))
-                                .staffId(dailyTimeTable.getSchoolStaff() != null ? dailyTimeTable.getSchoolStaff().getId() : "-")
+                                .staffId(dailyTimeTable.getSchoolStaff().getId())
                                 .comment(dailyTimeTable.getComment())
                                 .build();
                         return dto;
@@ -982,7 +918,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                             .clockInId(clockIn.getId())
                             .telaSchoolNumber(school.getTelaSchoolUID())
                             .academicTermId(academicTerm.getId())
-                            .staffId(clockIn.getSchoolStaff() != null ? clockIn.getSchoolStaff().getId() : "-")
+                            .staffId(clockIn.getSchoolStaff().getId())
                             .id(clockOut.getId())
                             .clockOutType(clockOut.getClockOutType())
                             .clockOutDateTime(clockOutDateTime.format(TelaDatePattern.dateTimePattern24))

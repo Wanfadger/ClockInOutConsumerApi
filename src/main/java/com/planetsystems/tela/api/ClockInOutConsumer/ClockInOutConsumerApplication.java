@@ -38,6 +38,7 @@ public class ClockInOutConsumerApplication implements CommandLineRunner {
 	private final SchoolRepository schoolRepository;
 	private final AcademicTermRepository academicTermRepository;
 	private final ClockInRepository clockInRepository;
+	private final ClockOutRepository clockOutRepository;
 	final SubjectRepository subjectRepository;
 	final LearnerEnrollmentRepository learnerEnrollmentRepository;
 	final SNLearnerEnrollmentRepository snLearnerEnrollmentRepository;
@@ -55,12 +56,50 @@ public class ClockInOutConsumerApplication implements CommandLineRunner {
 	}
 
 	@Override
+	@Transactional
 	public void run(String... args) throws Exception {
 
-//		Optional<IdProjection> optionalSchoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot("8008225962439" , Status.DELETED);
+//		Optional<IdProjection> optionalSchoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot("8008222085089" , Status.DELETED);
 //		if (optionalSchoolIdProjection.isPresent()) {
-//			System.out.println(optionalSchoolIdProjection.get().getId());
+//			IdProjection idProjection = optionalSchoolIdProjection.get();
+//			Optional<AcademicTerm> optionalAcademicTerm = academicTermRepository.activeAcademicTerm(Status.ACTIVE);
+//			AcademicTerm academicTerm = optionalAcademicTerm.get();
+//
+//			List<ClockOut> clockOuts = clockOutRepository.allByTerm_SchoolWithStaff(academicTerm.getId(), idProjection.getId());
+//			System.out.println("clockOuts "+" "+clockOuts.size());
+//
+//			// TODO fetch all term clockouts for school
+//			// todo group then by clockin and date
+//			Map<String, List<ClockOut>> dateClockInMap = clockOuts.parallelStream()
+//					.collect(Collectors.groupingBy(clockOut -> clockOut.getClockOutDate().format(TelaDatePattern.datePattern) + "-" + clockOut.getClockIn().getId()));
+//			// todo sortthem by create time and delete the last created ones
+//			dateClockInMap.keySet().stream().forEach(dateClockIn -> {
+//				String[] split = dateClockIn.split("-");
+//				String date = split[0];
+//				String clockIn = split[1];
+//				List<ClockOut> clockOutList = dateClockInMap.get(dateClockIn);
+//				if (clockOutList.size() > 1){
+//					ClockOut first = clockOutList.stream().findFirst().get();
+//					List<ClockOut> excludedFirst = clockOutList.stream().filter(clockOut -> !(clockOut.getId().equals(first.getId()))).toList();
+//					System.out.println(dateClockIn);
+//					System.out.println("DATE: "+date+" cl: "+ clockIn+" SIZE:"+ clockOutList.size());
+//					System.out.println(clockOutList.stream().map(clockOut -> clockOut.getCreatedDateTime()).sorted().toList());
+//					System.out.println(excludedFirst.stream().map(clockOut -> clockOut.getCreatedDateTime()).sorted().toList());
+//
+////					clockOutRepository.deleteAllInBatch(excludedFirst);
+////					System.out.println("successfully deleted");
+//				}else {
+//					System.out.println(clockOutList);
+//					System.out.println("All are below one");
+//				}
+//
+//			});
+//
+////			System.out.println(clockOuts1);
 //		}
+//
+
+		/// dleete
 
 //		Optional<AcademicTerm> optionalAcademicTerm = academicTermRepository.activeAcademicTerm(Status.ACTIVE);
 //		System.out.println(optionalAcademicTerm.get().getTerm());

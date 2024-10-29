@@ -20,6 +20,7 @@ import java.util.Set;
 @Getter
 @NoArgsConstructor
 @SuperBuilder
+@ToString
 public class ClockOut extends ParentEntity {
 
 	@OneToOne(fetch = FetchType.LAZY , targetEntity = ClockIn.class)
