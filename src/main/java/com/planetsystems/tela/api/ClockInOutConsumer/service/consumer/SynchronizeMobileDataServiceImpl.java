@@ -368,32 +368,11 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                             staffDTO.setRole("");
                         }
 
-
-//                        if (schoolStaff.getRegistrationNo() != null) {
-//                            staffDTO.setRegistrationNo(schoolStaff.getRegistrationNo());
-//                        } else {
-//                            staffDTO.setRegistrationNo("");
-//                        }
-//
-//                        if (schoolStaff.getNationality() != null) {
-//                            staffDTO.setNationality(schoolStaff.getNationality());
-//                        } else {
-//                            staffDTO.setNationality("");
-//                        }
-
-//                        staffDTO.setTeachingStaff(schoolStaff.isTeachingstaff());
                         staffDTO.setHasSpecialNeeds((schoolStaff.getSpecialNeeds() == null || schoolStaff.getSpecialNeeds()) ? "true" : "false");
                         staffDTO.setStaffType(schoolStaff.isTeachingstaff() ? "Teaching" : "Non-Teaching");
 
                         staffDTO.setExpectedHours(schoolStaff.getExpectedHours() > 8 ? 8 : schoolStaff.getExpectedHours());
                     }
-
-
-//                    SystemResponseDTO<List<SyncFaceIdDTO>> responseDTO = staffFaceIdService.findByRefId(s.getId());
-//                    Optional<SyncFaceIdDTO> optionalFaceId = responseDTO.getData().stream().findFirst();
-//                    if (optionalFaceId.isPresent()) {
-//                        employeeModel.setFileDownloadUri(optionalFaceId.get().getFileDownloadUri());
-//                    }
 
                     return staffDTO;
                 })
