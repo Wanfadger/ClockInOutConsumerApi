@@ -508,19 +508,16 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
     public void subscribeStaffDailyTimeAttendances(String staffStr) {
 
         try {
-            log.info("subscribeStaffs {}  " , staffStr);
             SchoolDataPublishPayloadDTO<List<StaffDailyTimeAttendanceDTO>> publishPayloadDTO = objectMapper.readValue(staffStr, new TypeReference<>() {
             });
 
 
             List<StaffDailyTimeAttendanceDTO> allAttendanceDTOS =  publishPayloadDTO.getData();
-            log.info("attendanceDTOS {} " , allAttendanceDTOS.size());
 
             AcademicTerm academicTerm = academicTermRepository.findById(publishPayloadDTO.getAcademicTerm()).orElseThrow(() -> new TelaNotFoundException("Term " + publishPayloadDTO.getAcademicTerm() + " not found"));
 
             Optional<IdProjection> optionalIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(publishPayloadDTO.getSchoolTelaNumber(), Status.DELETED);
             if (optionalIdProjection.isPresent()) {
-                log.info("FOUND TELA NUMBER {} ", publishPayloadDTO.getSchoolTelaNumber());
                 IdProjection idProjection = optionalIdProjection.get();
 
                 List<StaffDailyAttendanceSupervision> existingTermStaffDailyAttendanceSupervisions = staffDailyAttendanceSupervisionRepository
