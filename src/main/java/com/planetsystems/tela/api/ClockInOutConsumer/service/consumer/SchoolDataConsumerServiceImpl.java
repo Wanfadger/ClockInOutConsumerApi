@@ -399,19 +399,16 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
     public void subscribeStaffs(String staffStr) throws JsonProcessingException {
 
         try {
-            log.info("subscribeStaffs {}  " , staffStr);
             SchoolDataPublishPayloadDTO<List<StaffDTO>> publishPayloadDTO = objectMapper.readValue(staffStr, new TypeReference<SchoolDataPublishPayloadDTO<List<StaffDTO>>>() {
             });
 
 
             List<StaffDTO> allStaffDTOS =  publishPayloadDTO.getData();
-            log.info("allStaffDTOS {} " , allStaffDTOS.size());
 
             AcademicTerm academicTerm = academicTermRepository.findById(publishPayloadDTO.getAcademicTerm()).orElseThrow(() -> new TelaNotFoundException("Term " + publishPayloadDTO.getAcademicTerm() + " not found"));
 
             Optional<IdProjection> optionalIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(publishPayloadDTO.getSchoolTelaNumber(), Status.DELETED);
             if (optionalIdProjection.isPresent()) {
-                log.info("FOUND TELA NUMBER {} ", publishPayloadDTO.getSchoolTelaNumber());
                 IdProjection idProjection = optionalIdProjection.get();
 
                 List<SchoolStaff> allExistingStaffs = schoolStaffRepository.findAllBySchoolWithSchool_StaffDetail(Status.DELETED, idProjection.getId());
@@ -461,30 +458,6 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
 
                     return dto;
                 }).collect(Collectors.toList());
-
-
-                // process existing
-                // return general user details
-//                List<GeneralUserDetail> allUpdatedExistingStaffDetails = allExistingStaffDTOS.parallelStream()
-//                        .flatMap(dto -> allExistingStaffs.parallelStream()
-//                                .filter(staff -> dto.getId().equals(staff.getId()))
-//                                .map(staff -> {
-//                                    Optional<Gender> optionalGender = Gender.fromString(dto.getGender());
-//                                    GeneralUserDetail generalUserDetail = staff.getGeneralUserDetail();
-//                                    generalUserDetail.setStatus(Status.ACTIVE);
-//                                    generalUserDetail.setEmail(dto.getEmailAddress());
-//                                    generalUserDetail.setFirstName(dto.getFirstName());
-//                                    generalUserDetail.setLastName(dto.getLastName());
-//                                    generalUserDetail.setNameAbbrev(dto.getInitials());
-//                                    generalUserDetail.setNationalId(dto.getNationalId());
-//                                    generalUserDetail.setGender(optionalGender.isPresent() ? optionalGender.get() : Gender.MALE);
-//                                    generalUserDetail.setPhoneNumber(dto.getPhoneNumber());
-//                                    return generalUserDetail;
-//                                })
-//                        ).toList();
-//                if (allUpdatedExistingStaffDetails.size() > 0) {
-//                    generalUserDetailsRepository.saveAll(allUpdatedExistingStaffDetails);
-//                }
 
                 List<SchoolStaff> allUpdatedExistingStaffDetails = allExistingStaffDTOS.parallelStream()
                         .flatMap(dto -> allExistingStaffs.parallelStream()
