@@ -13,18 +13,21 @@ import java.util.Optional;
 public interface SchoolRepository extends JpaRepository<School, String> {
 
     @Query(value = """
-     SELECT S FROM School AS S
-     JOIN FETCH S.district
-     LEFT JOIN S.schoolGeoCoordinateList AS SG
-     WHERE S.status <> :status AND S.id= :id
-""")
+                 SELECT S FROM School AS S
+                 JOIN FETCH S.district
+                 LEFT JOIN S.schoolGeoCoordinateList AS SG
+                 WHERE S.status <> :status AND S.id= :id
+            """)
     Optional<School> findByStatusNotAndId(Status status, String id);
 
-    Optional<IdProjection> findByTelaSchoolUIDAndStatusNot(String telaSchoolUID , Status status);
+    Optional<IdProjection> findByTelaSchoolUIDAndStatusNot(String telaSchoolUID, Status status);
 
 
-
-    Optional<IdProjection> findByTelaSchoolUIDOrDeviceNumberAndStatusNot(String telaSchoolUID ,String deviceNumber, Status status);
+    @Query("""
+             SELECT S.id FROM School  AS S WHERE 
+             S.status <> :status AND S.telaSchoolUID = :telaSchoolUID OR S.deviceNumber=:deviceNumber
+             """)
+    Optional<IdProjection> idByStatusAndTelaSchoolUID(Status status , String telaSchoolUID);
 
 //    @EntityGraph(attributePaths = "{district}", type = EntityGraph.EntityGraphType.FETCH)
 //    Optional<School> findByStatusNotAndTelaSchoolUID(Status status, String telaSchoolUID);
