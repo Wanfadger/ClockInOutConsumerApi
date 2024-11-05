@@ -738,9 +738,6 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
     @Override
     @Async
     public void publishStaffDailyTimetables(School school, AcademicTerm academicTerm, String dateParam) {
-        log.info("publishStaffDailyTimetables");
-
-
         List<StaffDailyTimetableDTO> staffDailyTimetableDTOS;
 
         if ("all".equalsIgnoreCase(dateParam) || dateParam == null) {
