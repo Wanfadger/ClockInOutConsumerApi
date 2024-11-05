@@ -11,7 +11,6 @@ import lombok.*;
 @Builder
 public class StaffDailyTimeAttendanceDTO {
     String id;
-
     @NotEmpty(message = "staffId is required")
     @NotBlank(message = "staffId is required")
     String staffId;
