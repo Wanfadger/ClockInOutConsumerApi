@@ -590,21 +590,18 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
     @Override
     public void subscribeUpdateTimetableLessons(String updateTimetableLessonStr) {
         try {
-            log.info("subscribeUpdateTimetableLessons {}  " , updateTimetableLessonStr);
             SchoolDataPublishPayloadDTO<List<UpdateTimeTableLessonDTO>> publishPayloadDTO = objectMapper.readValue(updateTimetableLessonStr, new TypeReference<>() {
             });
 
 
             List<UpdateTimeTableLessonDTO> allUpdateTimeTableLessonDTOS =  publishPayloadDTO.getData();
             Optional<UpdateTimeTableLessonDTO> firstOptional = allUpdateTimeTableLessonDTOS.parallelStream().findFirst();
-            log.info("allUpdateTimeTableLessonDTOS {} " , allUpdateTimeTableLessonDTOS.size());
 
             AcademicTerm academicTerm = academicTermRepository.findById(publishPayloadDTO.getAcademicTerm()).orElseThrow(() -> new TelaNotFoundException("Term " + publishPayloadDTO.getAcademicTerm() + " not found"));
 
             Optional<IdProjection> optionalIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(publishPayloadDTO.getSchoolTelaNumber(), Status.DELETED);
 
             if (optionalIdProjection.isPresent() && firstOptional.isPresent()) {
-                log.info("FOUND TELA NUMBER {} ", publishPayloadDTO.getSchoolTelaNumber());
                 IdProjection idProjection = optionalIdProjection.get();
                 UpdateTimeTableLessonDTO firstDTO = firstOptional.get();
 
