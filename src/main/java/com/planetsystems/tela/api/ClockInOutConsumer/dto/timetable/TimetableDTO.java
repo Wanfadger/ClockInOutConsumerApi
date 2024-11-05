@@ -10,7 +10,6 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@ToString
 public class TimetableDTO {
  private String id = "";
  private String academicTermId = "";
