@@ -22,7 +22,7 @@ public class SchoolService {
 
     public  ResponseEntity<SystemAppFeedBackDTO<SchoolDTO>> validateSchool(String telaSchoolNumber) {
         log.info("validateSchool {} " , telaSchoolNumber);
-        IdProjection idProjection = schoolRepository.findByTelaSchoolUIDOrDeviceNumberAndStatusNot(telaSchoolNumber,telaSchoolNumber, Status.DELETED)
+        IdProjection idProjection = schoolRepository.idByStatusAndTelaSchoolUID(Status.DELETED , telaSchoolNumber)
                 .orElseThrow(() -> new TelaNotFoundException("Theres no school associated with " + telaSchoolNumber));
         School school = schoolRepository.findByStatusNotAndId(Status.DELETED, idProjection.getId()).orElseThrow(() -> new TelaNotFoundException("Theres no school associated with " + telaSchoolNumber));
         District district = school.getDistrict();
