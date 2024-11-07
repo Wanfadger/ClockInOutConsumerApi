@@ -728,19 +728,14 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
     @Override
     public void subscribeStaffDailyTaskSupervisions(String staffDailyTaskSupervisionStr) throws JsonProcessingException {
         try {
-            log.info("subscribeStaffDailyTaskSupervisions {}  " , staffDailyTaskSupervisionStr);
             SchoolDataPublishPayloadDTO<List<StaffDailyAttendanceTaskSupervisionDTO>> publishPayloadDTO = objectMapper.readValue(staffDailyTaskSupervisionStr, new TypeReference<>() {
             });
             List<StaffDailyAttendanceTaskSupervisionDTO> allStaffDailyTaskSupervisionDTOS = publishPayloadDTO.getData();
-
-            log.info("allStaffDailyTaskSupervisionDTOS {} " , allStaffDailyTaskSupervisionDTOS.size());
-
             AcademicTerm academicTerm = academicTermRepository.findById(publishPayloadDTO.getAcademicTerm()).orElseThrow(() -> new TelaNotFoundException("Term " + publishPayloadDTO.getAcademicTerm() + " not found"));
 
             Optional<IdProjection> optionalIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(publishPayloadDTO.getSchoolTelaNumber(), Status.DELETED);
 
             if (optionalIdProjection.isPresent()) {
-                log.info("FOUND TELA NUMBER {} ", publishPayloadDTO.getSchoolTelaNumber());
                 IdProjection idProjection = optionalIdProjection.get();
 
                 List<StaffDailyAttendanceSupervision> existingTermStaffDailyTimeSupervisions = staffDailyAttendanceSupervisionRepository
