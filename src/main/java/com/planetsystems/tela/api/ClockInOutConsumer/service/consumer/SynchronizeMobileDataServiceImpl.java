@@ -119,7 +119,6 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
     @Override
     @Async
     public void publishSchoolData(School school, AcademicTerm academicTerm) {
-        log.info(" start publish");
         AcademicTermDTO academicTermDTO = AcademicTermDTO.builder()
                 .id(academicTerm.getId())
                 .name(academicTerm.getTerm())
@@ -159,7 +158,6 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
             MQResponseDto<SchoolDTO> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.SCHOOL);
             responseDto.setData(schoolDTO);
-            log.info(" start publish");
             jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
             log.info("publishSchoolDatafor {} {} {} ", academicTerm.getTerm(), school.getName(), responseDto);
         } catch (Exception e) {
