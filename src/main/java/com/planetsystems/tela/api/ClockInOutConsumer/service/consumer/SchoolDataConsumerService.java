@@ -11,7 +11,7 @@ public interface SchoolDataConsumerService {
 
     void subscribeStaffs(String staffStr) throws JsonProcessingException;
 
-    void subscribeStaffDailyTimeAttendances(String taffDailyTimeAttendanceStr) throws JsonProcessingException;
+    void subscribeStaffDailyTimeAttendances(String staffDailyTimeAttendanceStr) throws JsonProcessingException;
 
     void subscribeUpdateTimetableLessons(String updateTimetableLessonStr) throws JsonProcessingException;
     void subscribeStaffDailyTimetables(String staffDailyTimetableStr) throws JsonProcessingException;
