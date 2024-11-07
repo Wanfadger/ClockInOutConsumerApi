@@ -808,7 +808,6 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
     @Override
     public void subscribeSchoolCoordinates(String schoolCoordinateStr) throws JsonProcessingException {
         try {
-            log.info("subscribeSchoolCoordinates {}  " , schoolCoordinateStr);
             SchoolDataPublishPayloadDTO<List<GeoCoordinateDTO>> publishPayloadDTO = objectMapper.readValue(schoolCoordinateStr, new TypeReference<>() {
             });
             Optional<GeoCoordinateDTO> optionalGeoCoordinateDTO = publishPayloadDTO.getData().parallelStream().findFirst();
@@ -817,10 +816,6 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
 
             if (optionalIdProjection.isPresent() && optionalGeoCoordinateDTO.isPresent()) {
                 GeoCoordinateDTO schoolCoordinateDTO = optionalGeoCoordinateDTO.get();
-
-                log.info("schoolCoordinateDTO {} " , schoolCoordinateDTO);
-
-                log.info("FOUND TELA NUMBER {} ", publishPayloadDTO.getSchoolTelaNumber());
                 IdProjection idProjection = optionalIdProjection.get();
                 Optional<SchoolGeoCoordinate> optionalSchoolGeoCoordinate = schoolGeoCoordinateRepository.findByStatusNotAndSchool_Id(Status.DELETED, idProjection.getId());
 
@@ -845,8 +840,6 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
                     SchoolGeoCoordinate saved = schoolGeoCoordinateRepository.save(schoolGeoCoordinate);
                     schoolCoordinateDTO.setId(saved.getId());
                 }
-
-
                 jmsTemplate.setPubSubDomain(true);
                 MQResponseDto<GeoCoordinateDTO> responseDto = new MQResponseDto<>();
                 responseDto.setResponseType(ResponseType.SCHOOL_COORDINATES);
