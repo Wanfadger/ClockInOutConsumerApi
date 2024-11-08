@@ -23,7 +23,7 @@ public class JmsConfig {
 
         factory.setSubscriptionDurable(true);
         factory.setPubSubDomain(true);
-        factory.setConcurrency("1");
+        factory.setConcurrency("1-5");
         connectionFactory.setClientId("TELA_CLOCK_IN_TOPIC_ID");
         factory.setClientId("TELA_CLOCK_IN_TOPIC_ID");
 
