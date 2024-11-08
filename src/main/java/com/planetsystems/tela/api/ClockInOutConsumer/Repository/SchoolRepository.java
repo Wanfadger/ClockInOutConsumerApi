@@ -24,8 +24,8 @@ public interface SchoolRepository extends JpaRepository<School, String> {
 
 
     @Query("""
-             SELECT S.id FROM School  AS S WHERE 
-             S.status <> :status AND S.telaSchoolUID = :telaSchoolUID OR S.deviceNumber=:deviceNumber
+             SELECT S.id AS id FROM School  AS S WHERE 
+             S.status <> :status AND S.telaSchoolUID = :telaSchoolUID
              """)
     Optional<IdProjection> idByStatusAndTelaSchoolUID(Status status , String telaSchoolUID);
 
