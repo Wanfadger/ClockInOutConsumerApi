@@ -67,49 +67,49 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
 
 
             log.info("synchronizeMobileData started for {}", queryParam);
-            IdProjection schoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(telaSchoolNumber, Status.DELETED).orElseThrow(() -> new TelaNotFoundException("School with " + telaSchoolNumber + " not found"));
+            //IdProjection schoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(telaSchoolNumber, Status.DELETED).orElseThrow(() -> new TelaNotFoundException("School with " + telaSchoolNumber + " not found"));
 
-            School school = schoolRepository.findByStatusNotAndId(Status.DELETED, schoolIdProjection.getId()).orElseThrow(() -> new TelaNotFoundException("School not found"));
-            AcademicTerm academicTerm = academicTermRepository.activeAcademicTerm(Status.ACTIVE).orElseThrow(() -> new TelaNotFoundException("Active term not found"));
+            //School school = schoolRepository.findByStatusNotAndId(Status.DELETED, schoolIdProjection.getId()).orElseThrow(() -> new TelaNotFoundException("School not found"));
+            //AcademicTerm academicTerm = academicTermRepository.activeAcademicTerm(Status.ACTIVE).orElseThrow(() -> new TelaNotFoundException("Active term not found"));
             // school information
             // school
-            publishSchoolData(school, academicTerm);
+            //publishSchoolData(school, academicTerm);
 
 //                 classes
-            publishSchoolClasses(school, academicTerm);
+            //publishSchoolClasses(school, academicTerm);
 
             // staff
-            publishSchoolStaffs(school, academicTerm);
+            //publishSchoolStaffs(school, academicTerm);
 
 //                subjects
-            publishSubjects(school, academicTerm);
+            //publishSubjects(school, academicTerm);
 
             //publishLearnerEnrollments
-            publishLearnerEnrollments(school, academicTerm);
+            //publishLearnerEnrollments(school, academicTerm);
 
             // publishSchoolTimetables
-            publishSchoolTimetables(school, academicTerm);
+            //publishSchoolTimetables(school, academicTerm);
 
             //publishStaffDailyTimetables
-            publishStaffDailyTimetables(school, academicTerm, dateParam);
+            //publishStaffDailyTimetables(school, academicTerm, dateParam);
 
             //publishLearnerAttendance
-            publishLearnerAttendance(school, academicTerm, dateParam);
+            //publishLearnerAttendance(school, academicTerm, dateParam);
 
 
             //publishStaffDailyTimeAttendance
-            publishStaffDailyTimeAttendanceSupervision(school, academicTerm, dateParam);
+            //publishStaffDailyTimeAttendanceSupervision(school, academicTerm, dateParam);
 
             //publishStaffDailyTimetableTaskSupervision
-            publishStaffDailyTimetableTaskSupervision(school, academicTerm, dateParam);
+            //publishStaffDailyTimetableTaskSupervision(school, academicTerm, dateParam);
             //publishDistricts
-            publishDistricts(school);
+            //publishDistricts(school);
 
             // clockins
-            publishSchoolClockIns(school, academicTerm, dateParam);
+            //publishSchoolClockIns(school, academicTerm, dateParam);
 
             //publishSchoolClockOuts
-            publishSchoolClockOuts(school, academicTerm, dateParam);
+            //publishSchoolClockOuts(school, academicTerm, dateParam);
 
         } catch (Exception e) {
             e.printStackTrace();
