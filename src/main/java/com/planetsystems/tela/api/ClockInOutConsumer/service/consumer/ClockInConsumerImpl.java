@@ -47,9 +47,6 @@ public class ClockInConsumerImpl {
 
     private final ObjectMapper objectMapper;
 
-    @Qualifier("topicConnectionFactory")
-    private final ConnectionFactory topicConnectionFactory;
-
     private final QueueTopicPublisher queueTopicPublisher;
 
 
@@ -118,7 +115,7 @@ public class ClockInConsumerImpl {
     }
 
 
-    @JmsListener(destination = "${queue.clockouts}")
+    @JmsListener(destination = "${queue.clockouts}" , containerFactory = "queueConnectionFactory")
     @Transactional
     public void subscribeClockOuts(String clockOutsStr) throws JsonProcessingException {
         log.info("subscribeClockOuts1");
@@ -244,42 +241,6 @@ public class ClockInConsumerImpl {
 
     }
 
-
-//    @JmsListener(destination = "${queue.clockin}" )
-//    @Transactional
-//    public void subscribeClockIn(String clockInString) throws JsonProcessingException {
-//        ClockInDTO dto = objectMapper.readValue(clockInString, new TypeReference<>() {
-//        });
-//
-//        LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
-//
-//        if (!clockInRepository.existsByStatusNotAndClockInDateAndSchoolStaff_Id(Status.DELETED , clockInDateTime.toLocalDate() , dto.getStaffId())) {
-//
-//            Optional<IdProjection> optionalSchoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(dto.getTelaSchoolNumber() , Status.DELETED);
-//
-//            if (optionalSchoolIdProjection.isPresent()) {
-//                IdProjection schoolIdProjection = optionalSchoolIdProjection.get();
-//                ClockIn clockIn = toClockIn(dto, clockInDateTime, schoolIdProjection);
-//
-//                log.info("CLOCKIN TO BE SAVED {}  " , dto);
-//                log.info("TELA NO {}  " , dto.getTelaSchoolNumber());
-//
-//                ClockIn save = clockInRepository.save(clockIn);
-//                dto.setId(save.getId());
-//                publishSchoolClockIn(dto);
-//            }
-//
-//        }else{
-//            log.info("ALREADY CLOCKED IN");
-//        }
-//
-//
-//
-//
-//
-//    }
-
-
     @Async
     public void publishSchoolClockIns(String telaSchoolNumber ,  List<ClockInDTO> dtoList) {
         try {
@@ -311,7 +272,7 @@ public class ClockInConsumerImpl {
             responseDto.setResponseType(ResponseType.CLOCKOUTS);
             responseDto.setData(dtoList);
 //            jmsTemplate.convertAndSend(telaSchoolNumber, objectMapper.writeValueAsString(responseDto));
-            publishTopicData(telaSchoolNumber , objectMapper.writeValueAsString(responseDto));
+            queueTopicPublisher.publishTopicData(telaSchoolNumber , objectMapper.writeValueAsString(responseDto));
             log.info("PUBLISHED SAVE UPDATED CLOCKOUTS FOR {} {} " , telaSchoolNumber , dtoList.size());
         } catch (Exception e) {
             e.printStackTrace();
@@ -320,17 +281,17 @@ public class ClockInConsumerImpl {
     }
 
 
-    private void  publishTopicData(String telaSchoolNumber , String data){
-        try {
-            jmsTemplate.setPubSubDomain(true);
-            jmsTemplate.setConnectionFactory(topicConnectionFactory);
-            jmsTemplate.setSessionAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
-            jmsTemplate.convertAndSend(telaSchoolNumber, data);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println(e);
-        }
-    }
+//    private void  publishTopicData(String telaSchoolNumber , String data){
+//        try {
+//            jmsTemplate.setPubSubDomain(true);
+//            jmsTemplate.setConnectionFactory(topicConnectionFactory);
+//            jmsTemplate.setSessionAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
+//            jmsTemplate.convertAndSend(telaSchoolNumber, data);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            System.out.println(e);
+//        }
+//    }
 
 
 
