@@ -16,9 +16,12 @@ import com.planetsystems.tela.api.ClockInOutConsumer.model.*;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.ClockedStatus;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.Status;
 import com.planetsystems.tela.api.ClockInOutConsumer.utils.TelaDatePattern;
+import com.planetsystems.tela.api.ClockInOutConsumer.utils.publisher.QueueTopicPublisher;
+import jakarta.jms.ConnectionFactory;
 import jakarta.jms.Session;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.scheduling.annotation.Async;
@@ -44,10 +47,17 @@ public class ClockInConsumerImpl {
 
     private final ObjectMapper objectMapper;
 
+    @Qualifier("topicConnectionFactory")
+    private final ConnectionFactory topicConnectionFactory;
 
-    @JmsListener(destination = "${queue.clockins}")
+    private final QueueTopicPublisher queueTopicPublisher;
+
+
+
+    @JmsListener(destination = "${queue.clockins}" , containerFactory = "queueConnectionFactory")
     @Transactional
     public void subscribeClockIns(String clockInsStr) throws JsonProcessingException {
+        log.info("subscribeClockIns1");
         List<ClockInDTO> dtoList = objectMapper.readValue(clockInsStr, new TypeReference<>() {
         });
 
@@ -56,26 +66,6 @@ public class ClockInConsumerImpl {
             ClockInDTO firstDTO = firstOptional.get();
 
             IdProjection idProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(firstDTO.getTelaSchoolNumber(), Status.DELETED).orElseThrow(() -> new TelaNotFoundException("School not found"));
-
-//            List<ClockIn> allSchoolTermClockIns = clockInRepository.allClockByTerm_School(clockInRequestDTO.getAcademicTermId(), idProjection.getId());
-//            List<ClockInDTO> newClockInDTOS = dtoList.parallelStream().filter(dto -> dto.getId().equalsIgnoreCase("")).toList();
-//            List<ClockInDTO> existingClockInDTOS = dtoList.parallelStream().filter(dto -> !dto.getId().equalsIgnoreCase("")).toList();
-//
-//
-//            log.info("CLOCKINS {} {} " , dtoList.size() , dtoList);
-//
-//
-//            /// NEW CLOCKiNS
-//            List<ClockInDTO> newSavedClockInDTOS = allSchoolTermClockIns.parallelStream().flatMap(clockIn -> newClockInDTOS.parallelStream().filter(dto -> {
-//                LocalDateTime dateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern);
-//                return !(clockIn.getClockInDate().equals(dateTime.toLocalDate()) && clockIn.getSchoolStaff().getId().equals(dto.getStaffId()));
-//            }).map(dto -> {
-//                LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern);
-//                ClockIn save = clockInRepository.save(toNewClockIn(dto, clockInDateTime, idProjection));
-//                dto.setId(save.getId());
-//                return dto;
-//            })).toList();
-
 
             // new
             List<ClockInDTO> newSavedClockInDTOS = dtoList.parallelStream()
@@ -123,34 +113,6 @@ public class ClockInConsumerImpl {
 
             publishSchoolClockIns(firstDTO.getTelaSchoolNumber() , newSavedClockInDTOS);
 
-
-//            dtoList.parallelStream()
-//                    .filter(dto -> dto.getId().equals(null) || dto.getId().isEmpty())
-//                    .filter(dto -> {
-//                LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
-//                        Optional<ClockIn> optionalClockIn = clockInRepository.allClockByDate_Staff(clockInDateTime.toLocalDate(), dto.getStaffId());
-//                        boolean alreadyExists = !clockInRepository.existsByStatusNotAndClockInDateAndSchoolStaff_Id(Status.DELETED, clockInDateTime.toLocalDate(), dto.getStaffId());
-//                if (optionalClockIn.isPresent()){
-//                    log.info("alreadyExists {} ", dto);
-//                    dto.setId(optionalClockIn.get().getId());
-//                    publishSchoolClockIn(dto);
-//                }
-//                return alreadyExists;
-//            }).forEach(dto -> {
-//                LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
-//                Optional<IdProjection> optionalSchoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(dto.getTelaSchoolNumber() , Status.DELETED);
-//
-//                if (optionalSchoolIdProjection.isPresent()) {
-//                    IdProjection schoolIdProjection = optionalSchoolIdProjection.get();
-//                    ClockIn clockIn = toNewClockIn(dto, clockInDateTime, schoolIdProjection);
-//                    ClockIn save = clockInRepository.save(clockIn);
-//                    dto.setId(save.getId());
-//                    publishSchoolClockIn(dto);
-//                }
-//            });
-
-
-
         }
 
     }
@@ -159,6 +121,7 @@ public class ClockInConsumerImpl {
     @JmsListener(destination = "${queue.clockouts}")
     @Transactional
     public void subscribeClockOuts(String clockOutsStr) throws JsonProcessingException {
+        log.info("subscribeClockOuts1");
         List<ClockOutDTO> dtoList = objectMapper.readValue(clockOutsStr, new TypeReference<>() {
         });
 
@@ -320,12 +283,17 @@ public class ClockInConsumerImpl {
     @Async
     public void publishSchoolClockIns(String telaSchoolNumber ,  List<ClockInDTO> dtoList) {
         try {
-            jmsTemplate.setPubSubDomain(true);
-            jmsTemplate.setSessionAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
+//            jmsTemplate.setPubSubDomain(true);
+//            jmsTemplate.setConnectionFactory(topicConnectionFactory);
+//            jmsTemplate.setSessionAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
             MQResponseDto<List<ClockInDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.CLOCKINS);
             responseDto.setData(dtoList);
-            jmsTemplate.convertAndSend(telaSchoolNumber, objectMapper.writeValueAsString(responseDto));
+//            jmsTemplate.convertAndSend(telaSchoolNumber, objectMapper.writeValueAsString(responseDto));
+
+
+            queueTopicPublisher.publishTopicData(telaSchoolNumber , objectMapper.writeValueAsString(responseDto));
+
             log.info("PUBLISHED SAVE UPDATED CLOCKINS FOR {} {} " , telaSchoolNumber , dtoList.size());
         } catch (Exception e) {
             e.printStackTrace();
@@ -337,13 +305,27 @@ public class ClockInConsumerImpl {
     @Async
     public void publishSchoolClockOuts(String telaSchoolNumber ,  List<ClockOutDTO> dtoList) {
         try {
-            jmsTemplate.setPubSubDomain(true);
-            jmsTemplate.setSessionAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
+//            jmsTemplate.setPubSubDomain(true);
+//            jmsTemplate.setSessionAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
             MQResponseDto<List<ClockOutDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.CLOCKOUTS);
             responseDto.setData(dtoList);
-            jmsTemplate.convertAndSend(telaSchoolNumber, objectMapper.writeValueAsString(responseDto));
+//            jmsTemplate.convertAndSend(telaSchoolNumber, objectMapper.writeValueAsString(responseDto));
+            publishTopicData(telaSchoolNumber , objectMapper.writeValueAsString(responseDto));
             log.info("PUBLISHED SAVE UPDATED CLOCKOUTS FOR {} {} " , telaSchoolNumber , dtoList.size());
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e);
+        }
+    }
+
+
+    private void  publishTopicData(String telaSchoolNumber , String data){
+        try {
+            jmsTemplate.setPubSubDomain(true);
+            jmsTemplate.setConnectionFactory(topicConnectionFactory);
+            jmsTemplate.setSessionAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
+            jmsTemplate.convertAndSend(telaSchoolNumber, data);
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println(e);
