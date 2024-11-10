@@ -21,11 +21,11 @@ public class JmsConfig {
         DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
         configurer.configure(factory, connectionFactory);
 
-        factory.setSubscriptionDurable(true);
+        factory.setSubscriptionDurable(false);
         factory.setPubSubDomain(true);
         factory.setConcurrency("1");
         connectionFactory.setClientId("TELA_CLOCK_IN_TOPIC_ID");
-        factory.setClientId("TELA_CLOCK_IN_TOPIC_ID");
+        factory.setClientId("TELA_CLOCK_IN_TOPIC_ID"); 
 
 
         return factory;
