@@ -109,7 +109,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
             publishSchoolClockIns(school, academicTerm, dateParam);
 
             //publishSchoolClockOuts
-            //publishSchoolClockOuts(school, academicTerm, dateParam);
+            publishSchoolClockOuts(school, academicTerm, dateParam);
 
         } catch (Exception e) {
             e.printStackTrace();
