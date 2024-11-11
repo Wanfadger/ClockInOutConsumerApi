@@ -116,6 +116,63 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
         }
     }
 
+
+    @Override
+    public ResponseEntity<Boolean> synchronizeRestSchoolData(SynchronizeRestSchoolDataDTO dto) {
+
+        log.info("SynchronizeRestSchoolData {} " , dto);
+       String dateParam = dto.date();
+        IdProjection schoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(dto.telaNumber(), Status.DELETED).orElseThrow(() -> new TelaNotFoundException("School with " + dto.telaNumber() + " not found"));
+
+        School school = schoolRepository.findByStatusNotAndId(Status.DELETED, schoolIdProjection.getId()).orElseThrow(() -> new TelaNotFoundException("School not found"));
+        AcademicTerm academicTerm = academicTermRepository.activeAcademicTerm(Status.ACTIVE).orElseThrow(() -> new TelaNotFoundException("Active term not found"));
+        // school information
+        // school
+        publishSchoolData(school, academicTerm);
+
+//                 classes
+            publishSchoolClasses(school, academicTerm);
+
+        // staff
+            publishSchoolStaffs(school, academicTerm);
+
+//                subjects
+            publishSubjects(school, academicTerm);
+
+        //publishLearnerEnrollments
+            publishLearnerEnrollments(school, academicTerm);
+
+        // publishSchoolTimetables
+
+            publishSchoolTimetables(school, academicTerm);
+
+
+        //publishStaffDailyTimetables
+            publishStaffDailyTimetables(school, academicTerm, dateParam);
+
+
+        //publishLearnerAttendance
+            publishLearnerAttendance(school, academicTerm, dateParam);
+
+
+        //publishStaffDailyTimeAttendance
+            publishStaffDailyTimeAttendanceSupervision(school, academicTerm, dateParam);
+
+        //publishStaffDailyTimetableTaskSupervision
+            publishStaffDailyTimetableTaskSupervision(school, academicTerm, dateParam);
+
+        //publishDistricts
+            publishDistricts(school);
+
+            // clockins
+            publishSchoolClockIns(school, academicTerm, dateParam);
+
+        //publishSchoolClockOuts
+            publishSchoolClockOuts(school, academicTerm, dateParam);
+
+        return ResponseEntity.ok(true);
+    }
+
     @Override
     @Async
     public void publishSchoolData(School school, AcademicTerm academicTerm) {
