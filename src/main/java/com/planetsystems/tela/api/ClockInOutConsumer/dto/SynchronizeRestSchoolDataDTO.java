@@ -1,4 +1,5 @@
-package com.planetsystems.tela.api.ClockInOutProducer.dto;
+package com.planetsystems.tela.api.ClockInOutConsumer.dto;
 
 public record SynchronizeRestSchoolDataDTO(String telaNumber , String date) {
+
 }
