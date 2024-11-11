@@ -20,4 +20,6 @@ public interface SynchronizeMobileDataService {
     void publishDistricts(School school);
     void publishSchoolTimetables(School school, AcademicTerm academicTerm);
 
+    ResponseEntity<Boolean> synchronizeRestSchoolData(SynchronizeRestSchoolDataDTO dto);
+
 }
