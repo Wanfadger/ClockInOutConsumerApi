@@ -418,7 +418,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
     @Override
     @Async
     public void publishSchoolClockIns(School school, AcademicTerm academicTerm, String dateParam) {
-        List<ClockInProjection> schoolDateClockIns;
+        /*List<ClockInProjection> schoolDateClockIns;
         System.out.println("school " + school.getTelaSchoolUID());
         System.out.println("academicTerm " + academicTerm.getId());
         if ("all".equalsIgnoreCase(dateParam)) {
@@ -448,15 +448,16 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                     return clockInDTO;
                 })
                 .sorted(Comparator.comparing(ClockInDTO::getClockInDateTime))
-                .toList();
+                .toList();*/
 
         try {
             jmsTemplate.setPubSubDomain(true);
             MQResponseDto<List<ClockInDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.CLOCKINS);
-            responseDto.setData(clockInDTOS);
+            //responseDto.setData(clockInDTOS);
+             responseDto.setData(Collections.emptyList()); 
             jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
-            log.info("CLOCKINS PUBLISHED for {} {} {} ", academicTerm.getTerm(), school.getName(), clockInDTOS.size());
+            //log.info("CLOCKINS PUBLISHED for {} {} {} ", academicTerm.getTerm(), school.getName(), clockInDTOS.size());
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println(e);
@@ -609,7 +610,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
         log.info("publishStaffDailyTimeAttendanceSupervision {} ", dateParam);
         log.info("AcademicTerm {} ", school.getId());
         log.info("School {} ", academicTerm);
-        List<StaffDailyAttendanceSupervision> staffDailyAttendanceSupervisions;
+        /*List<StaffDailyAttendanceSupervision> staffDailyAttendanceSupervisions;
         if ("all".equalsIgnoreCase(dateParam) || dateParam == null) {
             staffDailyAttendanceSupervisions = staffDailyAttendanceSupervisionRepository.allByTerm_School(academicTerm.getStartDate(), academicTerm.getEndDate(), school.getId());
         } else {
@@ -631,16 +632,17 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                     .supervisionDateTime(supervisionDateTime.format(TelaDatePattern.dateTimePattern24))
                     .build();
             return staffDailyTimeAttendanceDTO;
-        }).sorted(Comparator.comparing(StaffDailyTimeAttendanceDTO::getSupervisionDateTime)).toList();
+        }).sorted(Comparator.comparing(StaffDailyTimeAttendanceDTO::getSupervisionDateTime)).toList();*/
 
 
         try {
             jmsTemplate.setPubSubDomain(true);
             MQResponseDto<List<StaffDailyTimeAttendanceDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.STAFF_DAILY_TIME_ATTENDANCES);
-            responseDto.setData(staffDailyTimeAttendanceDTOS);
+            //responseDto.setData(staffDailyTimeAttendanceDTOS);
+            responseDto.setData(Collections.emptyList());
             jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
-            log.info("STAFF_DAILY_TIME_ATTENDANCES published for {} {} {} ", academicTerm.getTerm(), school.getName(), staffDailyTimeAttendanceDTOS.size());
+            //log.info("STAFF_DAILY_TIME_ATTENDANCES published for {} {} {} ", academicTerm.getTerm(), school.getName(), staffDailyTimeAttendanceDTOS.size());
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println(e);
@@ -651,19 +653,20 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
     @Override
     @Async
     public void publishDistricts(School school) {
-        List<DistrictDTO> districtDTOS = districtRepository.findAllByStatusNot(Status.DELETED)
+        /*List<DistrictDTO> districtDTOS = districtRepository.findAllByStatusNot(Status.DELETED)
                 .parallelStream()
                 .map(district -> new DistrictDTO(district.getId(), district.getName(), district.getRegion().getName()))
                 .sorted(Comparator.comparing(DistrictDTO::name))
-                .toList();
+                .toList();*/
 
         try {
             jmsTemplate.setPubSubDomain(true);
             MQResponseDto<List<DistrictDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.DISTRICTS);
-            responseDto.setData(districtDTOS);
+            //responseDto.setData(districtDTOS);
+            responseDto.setData(Collections.emptyList());
             jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
-            log.info("DISTRICTS Published for {} {} ", school.getName(), districtDTOS.size());
+            //log.info("DISTRICTS Published for {} {} ", school.getName(), districtDTOS.size());
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println(e);
@@ -834,7 +837,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
     public void publishStaffDailyTimetableTaskSupervision(School school, AcademicTerm academicTerm, String dateParam) {
         log.info("publishStaffDailyTimetableTaskSupervision");
 
-        List<StaffDailyAttendanceTaskSupervisionDTO> staffDailyAttendanceTaskSupervisionDTOS;
+        /*List<StaffDailyAttendanceTaskSupervisionDTO> staffDailyAttendanceTaskSupervisionDTOS;
         if ("all".equalsIgnoreCase(dateParam) || dateParam == null) {
             List<StaffDailyAttendanceSupervision> termStaffDailyAttendanceSupervisions = staffDailyAttendanceSupervisionRepository.allByTerm_School(academicTerm.getStartDate(), academicTerm.getEndDate(), school.getId());
             List<StaffDailyAttendanceTaskSupervision> termStaffDailyAttendanceTaskSupervisions = staffDailyAttendanceTaskSupervisionRepository.allIn(termStaffDailyAttendanceSupervisions);
@@ -882,16 +885,17 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                             })
                     ).sorted(Comparator.comparing(StaffDailyAttendanceTaskSupervisionDTO::getSupervisionDate))
                     .toList();
-        }
+        }*/
 
 
         try {
             jmsTemplate.setPubSubDomain(true);
             MQResponseDto<List<StaffDailyAttendanceTaskSupervisionDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.STAFF_DAILY_TASK_SUPERVISIONS);
-            responseDto.setData(staffDailyAttendanceTaskSupervisionDTOS);
+            //responseDto.setData(staffDailyAttendanceTaskSupervisionDTOS);
+             responseDto.setData(Collections.emptyList());
             jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
-            log.info("STAFF_DAILY_TASK_SUPERVISION published for {} {} {} ", academicTerm.getTerm(), school.getName(), staffDailyAttendanceTaskSupervisionDTOS.size());
+            //log.info("STAFF_DAILY_TASK_SUPERVISION published for {} {} {} ", academicTerm.getTerm(), school.getName(), staffDailyAttendanceTaskSupervisionDTOS.size());
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println(e);
@@ -902,7 +906,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
     @Override
     @Async
     public void publishSchoolClockOuts(School school, AcademicTerm academicTerm, String dateParam) {
-        List<ClockOut> schoolClockOuts;
+        /*List<ClockOut> schoolClockOuts;
         if ("all".equalsIgnoreCase(dateParam)) {
             schoolClockOuts = clockOutRepository.allByTerm_SchoolWithStaff(academicTerm.getId(), school.getId());
         } else {
@@ -932,15 +936,16 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                     return clockOutDTO;
                 })
                 .sorted(Comparator.comparing(ClockOutDTO::getClockOutDateTime))
-                .toList();
+                .toList();*/
 
         try {
             jmsTemplate.setPubSubDomain(true);
             MQResponseDto<List<ClockOutDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.CLOCKOUTS);
-            responseDto.setData(clockOutDTOS);
+            //responseDto.setData(clockOutDTOS);
+            responseDto.setData(Collections.emptyList());
             jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
-            log.info("CLOCKOUTS PUBLISHED for {} {} {} ", academicTerm.getTerm(), school.getName(), clockOutDTOS.size());
+            //log.info("CLOCKOUTS PUBLISHED for {} {} {} ", academicTerm.getTerm(), school.getName(), clockOutDTOS.size());
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println(e);
