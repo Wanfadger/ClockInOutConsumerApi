@@ -2,6 +2,7 @@ package com.planetsystems.tela.api.ClockInOutConsumer.service.consumer;
 
 import com.planetsystems.tela.api.ClockInOutConsumer.model.AcademicTerm;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.School;
+import com.planetsystems.tela.api.ClockInOutConsumer.dto.SynchronizeRestSchoolDataDTO;
 
 public interface SynchronizeMobileDataService {
 
