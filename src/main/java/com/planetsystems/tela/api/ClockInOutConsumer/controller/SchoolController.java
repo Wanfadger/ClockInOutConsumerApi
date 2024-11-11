@@ -19,10 +19,16 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class SchoolController {
     final SchoolService schoolService;
+    final SynchronizeMobileDataService synchronizeMobileDataService;
 
     @PostMapping("/validateSchool/{telaSchoolNumber}")
     public ResponseEntity<SystemAppFeedBackDTO<SchoolDTO>> validateSchool(@PathVariable @NotEmpty(message = "telaSchoolNumber is required") @NotBlank(message = "telaSchoolNumber is required") String telaSchoolNumber)  {
        log.info("jajjssd {} " , telaSchoolNumber);
         return schoolService.validateSchool(telaSchoolNumber);
     }
+
+    @PostMapping("/synchronizeRestSchoolData")
+public ResponseEntity<Boolean> synchronizeRestSchoolData(@RequestBody SynchronizeRestSchoolDataDTO dto)  {
+    return synchronizeMobileDataService.synchronizeRestSchoolData(dto);
+}
 }
