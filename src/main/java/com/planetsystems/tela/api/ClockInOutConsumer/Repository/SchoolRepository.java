@@ -29,6 +29,14 @@ public interface SchoolRepository extends JpaRepository<School, String> {
              """)
     Optional<IdProjection> idByStatusAndTelaSchoolUID(Status status , String telaSchoolUID);
 
+    @Query(value = """
+                 SELECT S FROM School AS S
+                 JOIN FETCH S.district
+                 LEFT JOIN S.schoolGeoCoordinateList AS SG
+                 WHERE S.status <> :status AND S.telaSchoolUID = :telaNumber OR S.deviceNumber = :deviceNumber
+            """)
+    Optional<School> byTelaNumberOrDeviceNumber(Status status, String telaNumber , String deviceNumber);
+
 //    @EntityGraph(attributePaths = "{district}", type = EntityGraph.EntityGraphType.FETCH)
 //    Optional<School> findByStatusNotAndTelaSchoolUID(Status status, String telaSchoolUID);
 //
