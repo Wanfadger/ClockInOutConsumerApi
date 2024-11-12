@@ -14,10 +14,9 @@ import com.planetsystems.tela.api.ClockInOutConsumer.exception.TelaNotFoundExcep
 import com.planetsystems.tela.api.ClockInOutConsumer.model.*;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.*;
 import com.planetsystems.tela.api.ClockInOutConsumer.utils.TelaDatePattern;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
+import com.planetsystems.tela.api.ClockInOutConsumer.utils.publisher.QueueTopicPublisher;
+import com.planetsystems.tela.api.ClockInOutConsumer.utils.publisher.TelaQueueNames;
+import jakarta.jms.Message;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jms.annotation.JmsListener;
@@ -55,16 +54,13 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
     final TimeTableLessonRepository timeTableLessonRepository;
 
     final SchoolGeoCoordinateRepository schoolGeoCoordinateRepository;
-    final JmsTemplate jmsTemplate;
-
-
-
-
+//    final JmsTemplate jmsTemplate;
+    private final QueueTopicPublisher queueTopicPublisher;
 
     @JmsListener(destination = "${queue.learnerHeadCounts}")
     @Transactional
     @Override
-    public void subscribeLearnerHeadCounts(String learnerHeadCountStr) throws JsonProcessingException {
+    public void subscribeLearnerHeadCounts(String learnerHeadCountStr , Message message) throws JsonProcessingException {
         log.info("learnerHeadCountStr {}  " , learnerHeadCountStr);
         SchoolDataPublishPayloadDTO<List<LearnerHeadCountDTO>> publishPayloadDTO = objectMapper.readValue(learnerHeadCountStr, new TypeReference<SchoolDataPublishPayloadDTO<List<LearnerHeadCountDTO>>>() {
         });
@@ -158,12 +154,14 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
             }
             log.info("existingSnLearnerEnrollment {} " , existingSnLearnerEnrollments.size());
             try {
-                jmsTemplate.setPubSubDomain(true);
+//                jmsTemplate.setPubSubDomain(true);
                 MQResponseDto<List<LearnerHeadCountDTO>> responseDto = new MQResponseDto<>();
                 responseDto.setResponseType(ResponseType.LEARNER_HEADCOUNTS);
                 responseDto.setData(allLearnerHeadCountDTOS);
-                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+//                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+                queueTopicPublisher.publishTopicData(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
                 log.info("PUBLISHED SAVE UPDATED LEARNER_HEADCOUNTS  for {} {} {} ",academicTerm.getTerm(), idProjection.getId() ,  allLearnerHeadCountDTOS.size());
+                queueTopicPublisher.deleteMessageFromQueue(TelaQueueNames.LearnerHeadCounts , message);
             } catch (Exception e) {
                 e.printStackTrace();
                 System.out.println(e);
@@ -175,10 +173,10 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
     }
 
 
-    @JmsListener(destination = "${queue.classAttendances}")
+    @JmsListener(destination = "${queue.classAttendances}" )
     @Transactional
     @Override
-    public void subscribeClassAttendances(String classAttendanceStr) throws JsonProcessingException {
+    public void subscribeClassAttendances(String classAttendanceStr, Message message) throws JsonProcessingException {
         log.info("subscribeClassAttendances {}  " , classAttendanceStr);
         SchoolDataPublishPayloadDTO<List<LearnerAttendanceDTO>> publishPayloadDTO = objectMapper.readValue(classAttendanceStr, new TypeReference<SchoolDataPublishPayloadDTO<List<LearnerAttendanceDTO>>>() {
         });
@@ -289,11 +287,12 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
 
 
             try {
-                jmsTemplate.setPubSubDomain(true);
+//                jmsTemplate.setPubSubDomain(true);
                 MQResponseDto<List<LearnerAttendanceDTO>> responseDto = new MQResponseDto<>();
                 responseDto.setResponseType(ResponseType.LEARNER_ATTENDANCES);
                 responseDto.setData(allClassAttendanceDTOS);
-                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+//                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+                queueTopicPublisher.publishTopicData(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
                 log.info("PUBLISHED SAVE UPDATED LEARNER_ATTENDANCES  for {} {} {} ",academicTerm.getTerm(), idProjection.getId() ,  allClassAttendanceDTOS.size());
             } catch (Exception e) {
                 e.printStackTrace();
@@ -307,10 +306,10 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
 
 
 
-    @JmsListener(destination = "${queue.classes}")
+    @JmsListener(destination = "${queue.classes}" )
     @Transactional
     @Override
-    public void subscribeClasses(String classesStr) throws JsonProcessingException {
+    public void subscribeClasses(String classesStr, Message message) throws JsonProcessingException {
         log.info("subscribeClasses {}  " , classesStr);
         SchoolDataPublishPayloadDTO<List<ClassDTO>> publishPayloadDTO = objectMapper.readValue(classesStr, new TypeReference<SchoolDataPublishPayloadDTO<List<ClassDTO>>>() {
         });
@@ -376,11 +375,12 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
 
 
             try {
-                jmsTemplate.setPubSubDomain(true);
+//                jmsTemplate.setPubSubDomain(true);
                 MQResponseDto<List<ClassDTO>> responseDto = new MQResponseDto<>();
                 responseDto.setResponseType(ResponseType.CLASSES);
                 responseDto.setData(allSavedNewClassDTOS);
-                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+//                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+                queueTopicPublisher.publishTopicData(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
                 log.info("PUBLISHED SAVE UPDATED CLASSES  for {} {} {} ",academicTerm.getTerm(), idProjection.getId() ,  allSavedNewClassDTOS.size());
             } catch (Exception e) {
                 e.printStackTrace();
@@ -393,10 +393,10 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
     }
 
 
-    @JmsListener(destination = "${queue.staffs}")
+    @JmsListener(destination = "${queue.staffs}" )
     @Transactional
     @Override
-    public void subscribeStaffs(String staffStr) throws JsonProcessingException {
+    public void subscribeStaffs(String staffStr, Message message) throws JsonProcessingException {
 
         try {
             SchoolDataPublishPayloadDTO<List<StaffDTO>> publishPayloadDTO = objectMapper.readValue(staffStr, new TypeReference<SchoolDataPublishPayloadDTO<List<StaffDTO>>>() {
@@ -486,11 +486,12 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
 
                 allSavedNewStaffDTOS.addAll(allExistingStaffDTOS);
 
-                jmsTemplate.setPubSubDomain(true);
+//                jmsTemplate.setPubSubDomain(true);
                 MQResponseDto<List<StaffDTO>> responseDto = new MQResponseDto<>();
                 responseDto.setResponseType(ResponseType.STAFFS);
                 responseDto.setData(allSavedNewStaffDTOS);
-                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+//                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+                queueTopicPublisher.publishTopicData(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
                 log.info("PUBLISHED SAVE UPDATED STAFFS  for {} {} {} ",academicTerm.getTerm(), idProjection.getId() ,  allSavedNewStaffDTOS.size());
             }
 
@@ -502,10 +503,10 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
         }
 
 
-    @JmsListener(destination = "${queue.staffDailyTimeAttendances}")
+    @JmsListener(destination = "${queue.staffDailyTimeAttendances}" )
     @Transactional
     @Override
-    public void subscribeStaffDailyTimeAttendances(String staffStr) {
+    public void subscribeStaffDailyTimeAttendances(String staffStr, Message message) {
 
         try {
             SchoolDataPublishPayloadDTO<List<StaffDailyTimeAttendanceDTO>> publishPayloadDTO = objectMapper.readValue(staffStr, new TypeReference<>() {
@@ -570,11 +571,12 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
 
                 allSavedNewDailyTimeAttendanceDTOS.addAll(allExistingStaffDailyTimeAttendanceDTOS);
 
-                jmsTemplate.setPubSubDomain(true);
+//                jmsTemplate.setPubSubDomain(true);
                 MQResponseDto<List<StaffDailyTimeAttendanceDTO>> responseDto = new MQResponseDto<>();
                 responseDto.setResponseType(ResponseType.STAFF_DAILY_TIME_ATTENDANCES);
                 responseDto.setData(allSavedNewDailyTimeAttendanceDTOS);
-                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+//                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+                queueTopicPublisher.publishTopicData(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
                 log.info("PUBLISHED SAVE UPDATED STAFF_DAILY_TIME_ATTENDANCES  for {} {} {} ",academicTerm.getTerm(), idProjection.getId() ,  allSavedNewDailyTimeAttendanceDTOS.size());
             }
 
@@ -585,10 +587,10 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
 
     }
 
-    @JmsListener(destination = "${queue.updateTimetableLessons}")
+    @JmsListener(destination = "${queue.updateTimetableLessons}" )
     @Transactional
     @Override
-    public void subscribeUpdateTimetableLessons(String updateTimetableLessonStr) {
+    public void subscribeUpdateTimetableLessons(String updateTimetableLessonStr , Message message) {
         try {
             SchoolDataPublishPayloadDTO<List<UpdateTimeTableLessonDTO>> publishPayloadDTO = objectMapper.readValue(updateTimetableLessonStr, new TypeReference<>() {
             });
@@ -616,11 +618,12 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
 
                 timeTableLessonRepository.saveAll(updatedTimeTableLessons);
 
-                jmsTemplate.setPubSubDomain(true);
+//                jmsTemplate.setPubSubDomain(true);
                 MQResponseDto<List<UpdateTimeTableLessonDTO>> responseDto = new MQResponseDto<>();
                 responseDto.setResponseType(ResponseType.UPDATE_TIMETABLE_LESSONS);
                 responseDto.setData(allUpdateTimeTableLessonDTOS);
-                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+//                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+                queueTopicPublisher.publishTopicData(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
                 log.info("PUBLISHED SAVE UPDATED UPDATE_TIMETABLE_LESSONS  for {} {} {} ",academicTerm.getTerm(), idProjection.getId() ,  allUpdateTimeTableLessonDTOS.size());
             }
 
@@ -630,10 +633,10 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
         }
     }
 
-    @JmsListener(destination = "${queue.staffDailyTimetables}")
+    @JmsListener(destination = "${queue.staffDailyTimetables}" )
     @Transactional
     @Override
-    public void subscribeStaffDailyTimetables(String staffDailyTimetableStr) throws JsonProcessingException {
+    public void subscribeStaffDailyTimetables(String staffDailyTimetableStr, Message message) throws JsonProcessingException {
         try {
             SchoolDataPublishPayloadDTO<List<StaffDailyTimetableDTO>> publishPayloadDTO = objectMapper.readValue(staffDailyTimetableStr, new TypeReference<>() {
             });
@@ -668,17 +671,31 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
                             .status(Status.ACTIVE)
                             .build();
 
+                    String[] StartTimes = dto.getStartTime().split(":");
+                    String[] EndTimes = dto.getEndTime().split(":");
 
                     StaffDailyTimeTableLesson staffDailyTimeTableLesson = StaffDailyTimeTableLesson.builder()
                             .dailyTimeTableLessonStatus(AttendanceStatus.fromString(dto.getActionStatus()).get())
                             .lessonDate(LocalDate.parse(dto.getSubmissionDate() , TelaDatePattern.datePattern))
                             .schoolClass(new SchoolClass(dto.getClassId()))
                             .subject(new Subject(dto.getSubjectId()))
-                            .startTime(LocalTime.parse(dto.getStartTime() , TelaDatePattern.timePattern24))
-                            .endTime(LocalTime.parse(dto.getEndTime() , TelaDatePattern.timePattern24))
+//                            .startTime(LocalTime.parse(dto.getStartTime() , TelaDatePattern.timePattern24))
+//                            .endTime(LocalTime.parse(dto.getEndTime() , TelaDatePattern.timePattern24))
                             .staffDailyTimeTable(staffDailyTimeTable)
                             .status(Status.ACTIVE)
                             .build();
+
+                    if (StartTimes.length == 3){
+                        staffDailyTimeTableLesson.setStartTime(LocalTime.parse(dto.getStartTime() , TelaDatePattern.timePattern24));
+                    }else{
+                        staffDailyTimeTableLesson.setStartTime(LocalTime.parse(dto.getStartTime() , TelaDatePattern.HourMinutePattern24));
+                    }
+
+                    if (EndTimes.length == 3){
+                        staffDailyTimeTableLesson.setEndTime(LocalTime.parse(dto.getStartTime() , TelaDatePattern.timePattern24));
+                    }else{
+                        staffDailyTimeTableLesson.setEndTime(LocalTime.parse(dto.getStartTime() , TelaDatePattern.HourMinutePattern24));
+                    }
 
                     StaffDailyTimeTableLesson save = staffDailyTimeTableLessonRepository.save(staffDailyTimeTableLesson);
                     dto.setId(save.getId());
@@ -708,11 +725,12 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
 
                 allSavedNewStaffDailyTimetableDTOS.addAll(allExistingStaffDailyTimetableDTOS);
 
-                jmsTemplate.setPubSubDomain(true);
+//                jmsTemplate.setPubSubDomain(true);
                 MQResponseDto<List<StaffDailyTimetableDTO>> responseDto = new MQResponseDto<>();
                 responseDto.setResponseType(ResponseType.STAFF_DAILY_TIMETABLES);
                 responseDto.setData(allSavedNewStaffDailyTimetableDTOS);
-                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+//                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+                queueTopicPublisher.publishTopicData(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
                 log.info("PUBLISHED SAVE UPDATED STAFF_DAILY_TIMETABLES  for {} {} {} ",academicTerm.getTerm(), idProjection.getId() ,  allSavedNewStaffDailyTimetableDTOS.size());
             }
 
@@ -723,10 +741,10 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
     }
 
 
-    @JmsListener(destination = "${queue.staffDailyTaskSupervisions}")
+    @JmsListener(destination = "${queue.staffDailyTaskSupervisions}" )
     @Transactional
     @Override
-    public void subscribeStaffDailyTaskSupervisions(String staffDailyTaskSupervisionStr) throws JsonProcessingException {
+    public void subscribeStaffDailyTaskSupervisions(String staffDailyTaskSupervisionStr, Message message) throws JsonProcessingException {
         try {
             SchoolDataPublishPayloadDTO<List<StaffDailyAttendanceTaskSupervisionDTO>> publishPayloadDTO = objectMapper.readValue(staffDailyTaskSupervisionStr, new TypeReference<>() {
             });
@@ -784,11 +802,12 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
 
                 allSavedNewStaffDailyAttendanceTaskSupervisionDTOS.addAll(allExistingStaffDailyAttendanceTaskSupervisionDTOS);
 
-                jmsTemplate.setPubSubDomain(true);
+//                jmsTemplate.setPubSubDomain(true);
                 MQResponseDto<List<StaffDailyAttendanceTaskSupervisionDTO>> responseDto = new MQResponseDto<>();
                 responseDto.setResponseType(ResponseType.STAFF_DAILY_TASK_SUPERVISIONS);
                 responseDto.setData(allSavedNewStaffDailyAttendanceTaskSupervisionDTOS);
-                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+//                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+                queueTopicPublisher.publishTopicData(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
                 log.info("PUBLISHED SAVE UPDATED STAFF_DAILY_TASK_SUPERVISIONS  for {} {} {} ",academicTerm.getTerm(), idProjection.getId() ,  allSavedNewStaffDailyAttendanceTaskSupervisionDTOS.size());
             }
 
@@ -798,10 +817,10 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
         }
     }
 
-    @JmsListener(destination = "${queue.schoolCoordinate}")
+    @JmsListener(destination = "${queue.schoolCoordinate}" )
     @Transactional
     @Override
-    public void subscribeSchoolCoordinates(String schoolCoordinateStr) throws JsonProcessingException {
+    public void subscribeSchoolCoordinates(String schoolCoordinateStr, Message message) throws JsonProcessingException {
         try {
             SchoolDataPublishPayloadDTO<List<GeoCoordinateDTO>> publishPayloadDTO = objectMapper.readValue(schoolCoordinateStr, new TypeReference<>() {
             });
@@ -835,11 +854,13 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
                     SchoolGeoCoordinate saved = schoolGeoCoordinateRepository.save(schoolGeoCoordinate);
                     schoolCoordinateDTO.setId(saved.getId());
                 }
-                jmsTemplate.setPubSubDomain(true);
+//                jmsTemplate.setPubSubDomain(true);
                 MQResponseDto<GeoCoordinateDTO> responseDto = new MQResponseDto<>();
                 responseDto.setResponseType(ResponseType.SCHOOL_COORDINATES);
                 responseDto.setData(schoolCoordinateDTO);
-                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+//                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+
+                queueTopicPublisher.publishTopicData(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
                 log.info("PUBLISHED SAVE UPDATED SCHOOL_COORDINATES  for {} {} {} ",publishPayloadDTO.getAcademicTerm(), idProjection.getId() ,  schoolCoordinateDTO);
             }
 
