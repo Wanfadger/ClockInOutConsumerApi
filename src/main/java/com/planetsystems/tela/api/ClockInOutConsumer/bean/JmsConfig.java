@@ -14,42 +14,24 @@ import org.springframework.jms.connection.SingleConnectionFactory;
 @Slf4j
 public class JmsConfig {
 
-    @Bean(name = "topicConnectionFactory")
+    @Bean
     public JmsListenerContainerFactory<?> topicConnectionFactory(SingleConnectionFactory connectionFactory,
                                                                  DefaultJmsListenerContainerFactoryConfigurer configurer) {
         DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
-        factory.setSubscriptionDurable(true);
+        factory.setSubscriptionDurable(false);
         factory.setPubSubDomain(true);
         factory.setConcurrency("1");
         factory.setSessionAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
         factory.setSessionTransacted(false);
-        connectionFactory.setClientId("TELA_CLOCK_IN_TOPIC_ID");
-        factory.setClientId("TELA_CLOCK_IN_TOPIC_ID");
+//        connectionFactory.setClientId("TELA_CLOCK_IN_TOPIC_ID");
+//        factory.setClientId("TELA_CLOCK_IN_TOPIC_ID");
         configurer.configure(factory, connectionFactory);
+        
+
 
         factory.setErrorHandler(t -> {
             log.info("An error has occurred in the transaction");
             log.error("topicConnectionFactory "+t.getCause().getMessage());
-        });
-
-        return factory;
-    }
-
-
-    @Bean(name = "queueConnectionFactory")
-    @Primary
-    public JmsListenerContainerFactory<?> queueConnectionFactory(SingleConnectionFactory connectionFactory,
-                                                                 DefaultJmsListenerContainerFactoryConfigurer configurer) {
-        DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
-        factory.setAutoStartup(true);
-        factory.setSessionAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
-        factory.setSessionTransacted(false);
-        factory.setConcurrency("1");
-        configurer.configure(factory, connectionFactory);
-
-        factory.setErrorHandler(t -> {
-            log.info("An error has occurred in the transaction");
-            log.error("queueConnectionFactory "+t.getCause().getMessage());
         });
 
         return factory;
