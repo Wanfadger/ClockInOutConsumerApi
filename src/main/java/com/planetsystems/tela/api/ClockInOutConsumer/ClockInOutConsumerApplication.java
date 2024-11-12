@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
 @EnableAsync
 @Slf4j
 @RequiredArgsConstructor
+@EnableCaching
 public class ClockInOutConsumerApplication implements CommandLineRunner {
 
 	private final SchoolRepository schoolRepository;
