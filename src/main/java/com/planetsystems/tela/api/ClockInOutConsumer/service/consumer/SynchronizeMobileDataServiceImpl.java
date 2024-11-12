@@ -16,9 +16,13 @@ import com.planetsystems.tela.api.ClockInOutConsumer.model.*;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.*;
 import com.planetsystems.tela.api.ClockInOutConsumer.utils.Convertor;
 import com.planetsystems.tela.api.ClockInOutConsumer.utils.TelaDatePattern;
+import com.planetsystems.tela.api.ClockInOutConsumer.utils.publisher.QueueTopicPublisher;
+import com.planetsystems.tela.api.ClockInOutConsumer.utils.publisher.TelaQueueNames;
+import jakarta.jms.Message;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.scheduling.annotation.Async;
@@ -53,18 +57,19 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
     final TimeTableLessonRepository timeTableLessonRepository;
     final StaffDailyTimeTableRepository staffDailyTimeTableRepository;
     final StaffDailyTimeTableLessonRepository staffDailyTimeTableLessonRepository;
-    final JmsTemplate jmsTemplate;
+//    final JmsTemplate jmsTemplate;
+    final QueueTopicPublisher queueTopicPublisher;
     final ObjectMapper objectMapper;
 
 
-    @JmsListener(destination = "${queue.synchronizeMobileData}")
+    @JmsListener(destination = "${queue.synchronizeMobileData}" )
     @Transactional
-    public void synchronizeMobileData(@NonNull Map<String, String> queryParam) {
-
+    public void synchronizeMobileData(@NonNull Map<String, String> queryParam , Message message) {
+        log.info("synchronizeMobileData  {}"  , queryParam);
+        log.info("message  {}"  , message);
         try {
             String telaSchoolNumber = queryParam.get("telaSchoolNumber");
             String dateParam = queryParam.get("date");
-
 
             log.info("synchronizeMobileData started for {}", queryParam);
             IdProjection schoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(telaSchoolNumber, Status.DELETED).orElseThrow(() -> new TelaNotFoundException("School with " + telaSchoolNumber + " not found"));
@@ -75,45 +80,129 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
             // school
             publishSchoolData(school, academicTerm);
 
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(new MQResponseDto<List<ClassDTO>>(ResponseType.CLASSES , Collections.emptyList())));
+
+//                 classes
+//            publishSchoolClasses(school, academicTerm);
+
+            // staff
+//            publishSchoolStaffs(school, academicTerm);
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(new MQResponseDto<List<ClassDTO>>(ResponseType.STAFFS , Collections.emptyList())));
+
+//                subjects
+//            publishSubjects(school, academicTerm);
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(new MQResponseDto<List<ClassDTO>>(ResponseType.SUBJECTS , Collections.emptyList())));
+
+            //publishLearnerEnrollments
+//            publishLearnerEnrollments(school, academicTerm);
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(new MQResponseDto<List<ClassDTO>>(ResponseType.LEARNER_HEADCOUNTS , Collections.emptyList())));
+
+            // publishSchoolTimetables
+            TimetableDTO timetableDTO = TimetableDTO.builder()
+                    .schoolId(school.getId())
+                    .academicTermId(academicTerm.getId())
+                    .id("")
+                    .classTimetables(Collections.emptyList())
+                    .build();
+
+//            publishSchoolTimetables(school, academicTerm);
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(new MQResponseDto<TimetableDTO>(ResponseType.SCHOOL_TIMETABLE , timetableDTO)));
+
+
+            //publishStaffDailyTimetables
+//            publishStaffDailyTimetables(school, academicTerm, dateParam);
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(new MQResponseDto<List<ClassDTO>>(ResponseType.STAFF_DAILY_TIMETABLES , Collections.emptyList())));
+
+
+            //publishLearnerAttendance
+//            publishLearnerAttendance(school, academicTerm, dateParam);
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(new MQResponseDto<List<ClassDTO>>(ResponseType.LEARNER_ATTENDANCES , Collections.emptyList())));
+
+
+            //publishStaffDailyTimeAttendance
+//            publishStaffDailyTimeAttendanceSupervision(school, academicTerm, dateParam);
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(new MQResponseDto<List<ClassDTO>>(ResponseType.STAFF_DAILY_TIME_ATTENDANCES , Collections.emptyList())));
+
+
+            //publishStaffDailyTimetableTaskSupervision
+//            publishStaffDailyTimetableTaskSupervision(school, academicTerm, dateParam);
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(new MQResponseDto<List<ClassDTO>>(ResponseType.STAFF_DAILY_TASK_SUPERVISIONS , Collections.emptyList())));
+
+            //publishDistricts
+//            publishDistricts(school);
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(new MQResponseDto<List<ClassDTO>>(ResponseType.DISTRICTS , Collections.emptyList())));
+
+            // clockins
+//            publishSchoolClockIns(school, academicTerm, dateParam);
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(new MQResponseDto<List<ClassDTO>>(ResponseType.CLOCKINS , Collections.emptyList())));
+
+            //publishSchoolClockOuts
+//            publishSchoolClockOuts(school, academicTerm, dateParam);
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(new MQResponseDto<List<ClassDTO>>(ResponseType.CLOCKOUTS , Collections.emptyList())));
+
+
+//            queueTopicPublisher.browseDeleteQueueMessages(TelaQueueNames.SynchronizeMobileDataQueue , message);
+//            queueTopicPublisher.deleteMessageFromQueue(TelaQueueNames.SynchronizeMobileDataQueue , message);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public ResponseEntity<Boolean> synchronizeRestSchoolData(SynchronizeRestSchoolDataDTO dto) {
+
+        log.info("SynchronizeRestSchoolData {} " , dto);
+       String dateParam = dto.date();
+        IdProjection schoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(dto.telaNumber(), Status.DELETED).orElseThrow(() -> new TelaNotFoundException("School with " + dto.telaNumber() + " not found"));
+
+        School school = schoolRepository.findByStatusNotAndId(Status.DELETED, schoolIdProjection.getId()).orElseThrow(() -> new TelaNotFoundException("School not found"));
+        AcademicTerm academicTerm = academicTermRepository.activeAcademicTerm(Status.ACTIVE).orElseThrow(() -> new TelaNotFoundException("Active term not found"));
+        // school information
+        // school
+        publishSchoolData(school, academicTerm);
+
 //                 classes
             publishSchoolClasses(school, academicTerm);
 
-            // staff
+        // staff
             publishSchoolStaffs(school, academicTerm);
 
 //                subjects
             publishSubjects(school, academicTerm);
 
-            //publishLearnerEnrollments
+        //publishLearnerEnrollments
             publishLearnerEnrollments(school, academicTerm);
 
-            // publishSchoolTimetables
+        // publishSchoolTimetables
+
             publishSchoolTimetables(school, academicTerm);
 
-            //publishStaffDailyTimetables
+
+        //publishStaffDailyTimetables
             publishStaffDailyTimetables(school, academicTerm, dateParam);
 
-            //publishLearnerAttendance
+
+        //publishLearnerAttendance
             publishLearnerAttendance(school, academicTerm, dateParam);
 
 
-            //publishStaffDailyTimeAttendance
+        //publishStaffDailyTimeAttendance
             publishStaffDailyTimeAttendanceSupervision(school, academicTerm, dateParam);
 
-            //publishStaffDailyTimetableTaskSupervision
+        //publishStaffDailyTimetableTaskSupervision
             publishStaffDailyTimetableTaskSupervision(school, academicTerm, dateParam);
-            //publishDistricts
+
+        //publishDistricts
             publishDistricts(school);
 
             // clockins
             publishSchoolClockIns(school, academicTerm, dateParam);
 
-            //publishSchoolClockOuts
+        //publishSchoolClockOuts
             publishSchoolClockOuts(school, academicTerm, dateParam);
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        return ResponseEntity.ok(true);
     }
 
     @Override
@@ -154,11 +243,12 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
         }
 
         try {
-            jmsTemplate.setPubSubDomain(true);
+//            jmsTemplate.setPubSubDomain(true);
             MQResponseDto<SchoolDTO> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.SCHOOL);
             responseDto.setData(schoolDTO);
-            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+//            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
             log.info("publishSchoolDatafor {} {} {} ", academicTerm.getTerm(), school.getName(), responseDto);
         } catch (Exception e) {
             e.printStackTrace();
@@ -166,6 +256,8 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
         }
 
     }
+
+
 
     @Override
     @Async
@@ -222,11 +314,12 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
             }
 
 
-            jmsTemplate.setPubSubDomain(true);
+//            jmsTemplate.setPubSubDomain(true);
             MQResponseDto<List<ClassDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.CLASSES);
             responseDto.setData(classDTOS);
-            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+//            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
             log.info("CLASES PUBLISHED for {} {} {} ", academicTerm.getTerm(), school.getName(), classDTOS.size());
         } catch (Exception e) {
             e.printStackTrace();
@@ -378,11 +471,12 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                 .toList();
 
         try {
-            jmsTemplate.setPubSubDomain(true);
+//            jmsTemplate.setPubSubDomain(true);
             MQResponseDto<List<StaffDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.STAFFS);
             responseDto.setData(staffDTOList);
-            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+//            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
             log.info("STAFFS PUBLISHED for {} {} {} ", academicTerm.getTerm(), school.getName(), staffDTOList.size());
         } catch (Exception e) {
             e.printStackTrace();
@@ -398,6 +492,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
         List<ClockInProjection> schoolDateClockIns;
         System.out.println("school " + school.getTelaSchoolUID());
         System.out.println("academicTerm " + academicTerm.getId());
+
         if ("all".equalsIgnoreCase(dateParam)) {
             schoolDateClockIns = clockInRepository.nativeAllByTerm_School(academicTerm.getId(), school.getId());
         } else {
@@ -428,11 +523,13 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                 .toList();
 
         try {
-            jmsTemplate.setPubSubDomain(true);
+//            jmsTemplate.setPubSubDomain(true);
             MQResponseDto<List<ClockInDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.CLOCKINS);
             responseDto.setData(clockInDTOS);
-            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+//            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+            System.out.println("school.getTelaSchoolUID() " +school.getTelaSchoolUID());
             log.info("CLOCKINS PUBLISHED for {} {} {} ", academicTerm.getTerm(), school.getName(), clockInDTOS.size());
         } catch (Exception e) {
             e.printStackTrace();
@@ -453,11 +550,12 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                 .toList();
 
         try {
-            jmsTemplate.setPubSubDomain(true);
+//            jmsTemplate.setPubSubDomain(true);
             MQResponseDto<List<IdNameCodeDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.SUBJECTS);
             responseDto.setData(subjectDTOS);
-            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+//            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
             log.info("Subjects PUBLISHED for {} {} {} ", academicTerm.getTerm(), school.getName(), subjectDTOS.size());
         } catch (Exception e) {
             e.printStackTrace();
@@ -500,11 +598,12 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
         generalLearnerHeadCountDTOS.addAll(snLearnerHeadCountDTOS);
 
         try {
-            jmsTemplate.setPubSubDomain(true);
+//            jmsTemplate.setPubSubDomain(true);
             MQResponseDto<List<LearnerHeadCountDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.LEARNER_HEADCOUNTS);
             responseDto.setData(generalLearnerHeadCountDTOS);
-            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+//            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
             log.info("LEARNER_HEADCOUNTS PUBLISHED for {} {} {} ", academicTerm.getTerm(), school.getName(), generalLearnerHeadCountDTOS.size());
         } catch (Exception e) {
             e.printStackTrace();
@@ -567,11 +666,12 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
 
 
         try {
-            jmsTemplate.setPubSubDomain(true);
+//            jmsTemplate.setPubSubDomain(true);
             MQResponseDto<List<LearnerAttendanceDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.LEARNER_ATTENDANCES);
             responseDto.setData(generalLearnerAttendanceDTOS);
-            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+//            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
             log.info("LEARNER_HEADCOUNTS published for {} {} {} ", academicTerm.getTerm(), school.getName(), generalLearnerAttendanceDTOS.size());
         } catch (Exception e) {
             e.printStackTrace();
@@ -612,11 +712,12 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
 
 
         try {
-            jmsTemplate.setPubSubDomain(true);
+//            jmsTemplate.setPubSubDomain(true);
             MQResponseDto<List<StaffDailyTimeAttendanceDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.STAFF_DAILY_TIME_ATTENDANCES);
             responseDto.setData(staffDailyTimeAttendanceDTOS);
-            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+//            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
             log.info("STAFF_DAILY_TIME_ATTENDANCES published for {} {} {} ", academicTerm.getTerm(), school.getName(), staffDailyTimeAttendanceDTOS.size());
         } catch (Exception e) {
             e.printStackTrace();
@@ -635,11 +736,12 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                 .toList();
 
         try {
-            jmsTemplate.setPubSubDomain(true);
+//            jmsTemplate.setPubSubDomain(true);
             MQResponseDto<List<DistrictDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.DISTRICTS);
             responseDto.setData(districtDTOS);
-            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+//            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
             log.info("DISTRICTS Published for {} {} ", school.getName(), districtDTOS.size());
         } catch (Exception e) {
             e.printStackTrace();
@@ -706,11 +808,12 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
             timetableDTO.setClassTimetables(classTimetableDTOS);
 
             try {
-                jmsTemplate.setPubSubDomain(true);
+//                jmsTemplate.setPubSubDomain(true);
                 MQResponseDto<TimetableDTO> responseDto = new MQResponseDto<>();
                 responseDto.setResponseType(ResponseType.SCHOOL_TIMETABLE);
                 responseDto.setData(timetableDTO);
-                jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+//                jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+                queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
                 log.info("SCHOOL_TIMETABLE published for {} \n {} \n {}  ", academicTerm.getTerm(), school.getName(), timetableDTO);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -718,11 +821,12 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
             }
         } else {
             try {
-                jmsTemplate.setPubSubDomain(true);
+//                jmsTemplate.setPubSubDomain(true);
                 MQResponseDto<TimetableDTO> responseDto = new MQResponseDto<>();
                 responseDto.setResponseType(ResponseType.SCHOOL_TIMETABLE);
                 responseDto.setData(new TimetableDTO());
-                jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+//                jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+                queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
                 log.info("SCHOOL_TIMETABLE published for {} \n {} \n {}  ", academicTerm.getTerm(), school.getName(), new TimetableDTO());
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
@@ -790,11 +894,12 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
 
 
         try {
-            jmsTemplate.setPubSubDomain(true);
+//            jmsTemplate.setPubSubDomain(true);
             MQResponseDto<List<StaffDailyTimetableDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.STAFF_DAILY_TIMETABLES);
             responseDto.setData(staffDailyTimetableDTOS);
-            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+//            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
             log.info("STAFF_DAILY_TIMETABLES published for {} {} {} ", academicTerm.getTerm(), school.getName(), staffDailyTimetableDTOS.size());
         } catch (Exception e) {
             e.printStackTrace();
@@ -860,11 +965,12 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
 
 
         try {
-            jmsTemplate.setPubSubDomain(true);
+//            jmsTemplate.setPubSubDomain(true);
             MQResponseDto<List<StaffDailyAttendanceTaskSupervisionDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.STAFF_DAILY_TASK_SUPERVISIONS);
             responseDto.setData(staffDailyAttendanceTaskSupervisionDTOS);
-            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+//            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
             log.info("STAFF_DAILY_TASK_SUPERVISION published for {} {} {} ", academicTerm.getTerm(), school.getName(), staffDailyAttendanceTaskSupervisionDTOS.size());
         } catch (Exception e) {
             e.printStackTrace();
@@ -909,11 +1015,12 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
                 .toList();
 
         try {
-            jmsTemplate.setPubSubDomain(true);
+//            jmsTemplate.setPubSubDomain(true);
             MQResponseDto<List<ClockOutDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.CLOCKOUTS);
             responseDto.setData(clockOutDTOS);
-            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+//            jmsTemplate.convertAndSend(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
+            queueTopicPublisher.publishTopicData(school.getTelaSchoolUID(), objectMapper.writeValueAsString(responseDto));
             log.info("CLOCKOUTS PUBLISHED for {} {} {} ", academicTerm.getTerm(), school.getName(), clockOutDTOS.size());
         } catch (Exception e) {
             e.printStackTrace();
