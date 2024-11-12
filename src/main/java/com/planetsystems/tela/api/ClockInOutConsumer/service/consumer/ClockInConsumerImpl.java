@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Deprecated(forRemoval = true)
 public class ClockInConsumerImpl {
 
     private final ClockInRepository clockInRepository;
@@ -51,200 +52,7 @@ public class ClockInConsumerImpl {
 
 
 
-    @JmsListener(destination = "${queue.clockins}")
-    @Transactional
-    public void subscribeClockIns(String clockInsStr) throws JsonProcessingException {
-        log.info("subscribeClockIns1");
-        List<ClockInDTO> dtoList = objectMapper.readValue(clockInsStr, new TypeReference<>() {
-        });
 
-        Optional<ClockInDTO> firstOptional = dtoList.parallelStream().findFirst();
-        if (firstOptional.isPresent()) {
-            ClockInDTO firstDTO = firstOptional.get();
-
-            IdProjection idProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(firstDTO.getTelaSchoolNumber(), Status.DELETED).orElseThrow(() -> new TelaNotFoundException("School not found"));
-
-            // new
-            List<ClockInDTO> newSavedClockInDTOS = dtoList.parallelStream()
-                    .filter(dto -> dto.getId().equals(null) || dto.getId().isEmpty())
-                    .map(dto -> {
-                        LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
-                        Optional<ClockIn> optionalClockIn = clockInRepository.clockInByDate_Staff(clockInDateTime.toLocalDate(), dto.getStaffId());
-                        if (optionalClockIn.isPresent()) {
-                            // todo compare clockin times
-                            ClockIn clock = optionalClockIn.get();
-                            boolean after = clock.getClockInTime().isAfter(clockInDateTime.toLocalTime());
-                            if (after){
-                                clock.setClockInTime(clockInDateTime.toLocalTime());
-                                clockInRepository.save(clock);
-                            }
-                            dto.setId(clock.getId());
-                        }else{
-                            ClockIn clockIn = toNewClockIn(dto, clockInDateTime, idProjection);
-                            ClockIn save = clockInRepository.save(clockIn);
-                            dto.setId(save.getId());
-                        }
-                        return dto;
-                    }).collect(Collectors.toList());
-
-            Optional<ClockInDTO> clockInDTOOptional = dtoList.parallelStream().findAny();
-
-
-            /// existing
-            List<ClockInDTO> existingSavedClockInDTOS = Collections.emptyList();
-            if (clockInDTOOptional.isPresent()) {
-                ClockInDTO clockInDTO = clockInDTOOptional.get();
-                LocalDateTime clockIDateTime = LocalDateTime.parse(clockInDTO.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
-                List<ClockIn> dateClockIns = clockInRepository.clockInByDate(clockIDateTime.toLocalDate());
-
-
-                existingSavedClockInDTOS = dateClockIns.parallelStream().flatMap(clockIn -> dtoList.parallelStream()
-                        .filter(dto -> clockIn.getSchoolStaff().getId().equals(dto.getStaffId()))
-                        .map(dto -> {
-                            LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
-                            Optional<ClockIn> optionalClockIn = clockInRepository.clockInByDate_Staff(clockInDateTime.toLocalDate(), dto.getStaffId());
-                            if (optionalClockIn.isPresent()) {
-                                // todo compare clockin times
-                                ClockIn clock = optionalClockIn.get();
-                                boolean after = clock.getClockInTime().isAfter(clockInDateTime.toLocalTime());
-                                if (after) {
-                                    clock.setClockInTime(clockInDateTime.toLocalTime());
-                                    clockInRepository.save(clock);
-                                }
-                            }
-                            return dto;
-                        })).toList();
-
-
-//                List<ClockInDTO> existingSavedClockInDTOS = dtoList.parallelStream()
-//                        .filter(dto -> (dto.getId() != null  && !dto.getId().isEmpty()))
-//                        .map(dto -> {
-//                            LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
-//                            Optional<ClockIn> optionalClockIn = clockInRepository.clockInByDate_Staff(clockInDateTime.toLocalDate(), dto.getStaffId());
-//                            if (optionalClockIn.isPresent()) {
-//                                // todo compare clockin times
-//                                ClockIn clock = optionalClockIn.get();
-//                                boolean after = clock.getClockInTime().isAfter(clockInDateTime.toLocalTime());
-//                                if (after){
-//                                    clock.setClockInTime(clockInDateTime.toLocalTime());
-//                                    clockInRepository.save(clock);
-//                                }
-//                            }
-//                            return dto;
-//                        }).toList();
-
-            }
-
-
-
-
-
-
-
-            newSavedClockInDTOS.addAll(existingSavedClockInDTOS);
-
-            publishSchoolClockIns(firstDTO.getTelaSchoolNumber() , newSavedClockInDTOS);
-
-        }
-
-    }
-
-
-    @JmsListener(destination = "${queue.clockouts}" )
-    @Transactional
-    public void subscribeClockOuts(String clockOutsStr) throws JsonProcessingException {
-        log.info("subscribeClockOuts1");
-        List<ClockOutDTO> dtoList = objectMapper.readValue(clockOutsStr, new TypeReference<>() {
-        });
-
-        Optional<ClockOutDTO> firstOptional = dtoList.parallelStream().findFirst();
-        if (firstOptional.isPresent()) {
-            ClockOutDTO firstDTO = firstOptional.get();
-            log.info("subscribeClockOuts {} {} " , dtoList.size() , dtoList);
-
-            /// new
-
-            List<ClockOutDTO> newSavedClockOutDTOS = dtoList.parallelStream()
-                    .filter(dto -> dto.getId().equals(null) || dto.getId().isEmpty())
-                    .map(dto -> {
-                        LocalDateTime clockOutDateTime = LocalDateTime.parse(dto.getClockOutDateTime(), TelaDatePattern.dateTimePattern24);
-                        Optional<ClockOut> optionalClockOut = clockOutRepository.clockOutByDate_Staff(clockOutDateTime.toLocalDate(), dto.getStaffId());
-                        if (optionalClockOut.isPresent()) {
-                            // todo compare clockout times
-                            ClockOut clockOut = optionalClockOut.get();
-                            boolean after = clockOut.getClockOutTime().isAfter(clockOutDateTime.toLocalTime());
-                            if (after){
-                                clockOut.setClockOutTime(clockOutDateTime.toLocalTime());
-                                clockOutRepository.save(clockOut);
-                            }
-                            dto.setId(clockOut.getId());
-                        }else{
-                            ClockOut clockOut = toNewClockOut(dto, clockOutDateTime);
-                            ClockOut save = clockOutRepository.save(clockOut);
-                            dto.setId(save.getId());
-                        }
-                        return dto;
-                    }).collect(Collectors.toList());
-
-
-            /// existing
-            List<ClockOutDTO> existingSavedClockOutDTOS = dtoList.parallelStream()
-                    .filter(dto -> (dto.getId() != null  && !dto.getId().isEmpty()))
-                    .map(dto -> {
-                        LocalDateTime clockOutDateTime = LocalDateTime.parse(dto.getClockOutDateTime(), TelaDatePattern.dateTimePattern24);
-                        Optional<ClockOut> optionalClockOut = clockOutRepository.clockOutByDate_Staff(clockOutDateTime.toLocalDate(), dto.getStaffId());
-                        if (optionalClockOut.isPresent()) {
-                            // todo compare clockin times
-                            ClockOut clockOut = optionalClockOut.get();
-                            boolean after = clockOut.getClockOutTime().isAfter(clockOutDateTime.toLocalTime());
-                            if (after){
-                                clockOut.setClockOutTime(clockOutDateTime.toLocalTime());
-                                clockOutRepository.save(clockOut);
-                            }
-                        }
-                        return dto;
-                    }).toList();
-
-
-            newSavedClockOutDTOS.addAll(existingSavedClockOutDTOS);
-
-            publishSchoolClockOuts(firstDTO.getTelaSchoolNumber() , newSavedClockOutDTOS);
-        }
-
-
-
-
-
-
-
-
-
-
-//        dtoList.parallelStream().filter(dto -> {
-//            LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
-//            boolean alreadyExists = !clockInRepository.existsByStatusNotAndClockInDateAndSchoolStaff_Id(Status.DELETED, clockInDateTime.toLocalDate(), dto.getStaffId());
-//            if (alreadyExists){
-//                log.info("alreadyExists {} ", dto);
-//                publishSchoolClockIn(dto);
-//            }
-//            return alreadyExists;
-//        }).forEach(dto -> {
-//            LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
-//            Optional<IdProjection> optionalSchoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(dto.getTelaSchoolNumber() , Status.DELETED);
-//
-//            if (optionalSchoolIdProjection.isPresent()) {
-//                IdProjection schoolIdProjection = optionalSchoolIdProjection.get();
-//                ClockIn clockIn = toNewClockIn(dto, clockInDateTime, schoolIdProjection);
-//
-//                log.info("CLOCKIN TO BE SAVED {}  " , dto);
-//                log.info("TELA NO {}  " , dto.getTelaSchoolNumber());
-//
-//                ClockIn save = clockInRepository.save(clockIn);
-//                dto.setId(save.getId());
-//                publishSchoolClockIns( dto);
-//            }
-//        });
-    }
 
     private  ClockIn toNewClockIn(ClockInDTO dto, LocalDateTime clockInDateTime, IdProjection schoolIdProjection) {
         return ClockIn.builder()
@@ -330,23 +138,23 @@ public class ClockInConsumerImpl {
 
 
 
-    @JmsListener(destination = "8008229464166" , containerFactory = "topicConnectionFactory")
-    @Transactional
-    public void subscribeSchoolClockIn(String clockInString) throws JsonProcessingException {
-
-        log.info("8008226193412 subscribeSchoolClockIn 1  {} ", clockInString);
-
-
-    }
-
-    @JmsListener(destination = "8008229464166" , containerFactory = "topicConnectionFactory")
-    @Transactional
-    public void subscribeSchoolClockIn2(String clockInString) throws JsonProcessingException {
-
-        log.info("8008226193412 subscribeSchoolClockIn 1  {} ", clockInString);
-
-
-    }
+//    @JmsListener(destination = "8008229464166" , containerFactory = "topicConnectionFactory")
+//    @Transactional
+//    public void subscribeSchoolClockIn(String clockInString) throws JsonProcessingException {
+//
+//        log.info("8008226193412 subscribeSchoolClockIn 1  {} ", clockInString);
+//
+//
+//    }
+//
+//    @JmsListener(destination = "8008229464166" , containerFactory = "topicConnectionFactory")
+//    @Transactional
+//    public void subscribeSchoolClockIn2(String clockInString) throws JsonProcessingException {
+//
+//        log.info("8008226193412 subscribeSchoolClockIn 1  {} ", clockInString);
+//
+//
+//    }
 
 //    @JmsListener(destination = "8008229464166" , containerFactory = "topicConnectionFactory")
 //    @Transactional
