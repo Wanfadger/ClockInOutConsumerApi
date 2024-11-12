@@ -262,6 +262,11 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
             newSavedClockOutDTOS.addAll(existingSavedClockOutDTOS);
 
             publishSchoolClockOuts(firstDTO.getTelaSchoolNumber() , newSavedClockOutDTOS);
+
+
+            // todo publish to broker
+            // todo evict school cache
+
         }
 
 
@@ -796,7 +801,7 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
                 IdProjection idProjection = optionalIdProjection.get();
 
                 List<StaffDailyAttendanceSupervision> existingTermStaffDailyAttendanceSupervisions = staffDailyAttendanceSupervisionRepository
-                        .allByTerm_School(academicTerm.getStartDate(), academicTerm.getEndDate(), idProjection.getId());
+                        .allByTermDates_School(academicTerm.getStartDate(), academicTerm.getEndDate(), idProjection.getId());
 
 
                 // process new general learners
@@ -1031,7 +1036,7 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
                 IdProjection idProjection = optionalIdProjection.get();
 
                 List<StaffDailyAttendanceSupervision> existingTermStaffDailyTimeSupervisions = staffDailyAttendanceSupervisionRepository
-                        .allByTerm_School(academicTerm.getStartDate() , academicTerm.getEndDate(), idProjection.getId());
+                        .allByTermDates_School(academicTerm.getStartDate() , academicTerm.getEndDate(), idProjection.getId());
 
                 List<StaffDailyAttendanceTaskSupervision> existingTermStaffDailyTaskSupervisions = staffDailyAttendanceTaskSupervisionRepository.allIn(existingTermStaffDailyTimeSupervisions);
 
