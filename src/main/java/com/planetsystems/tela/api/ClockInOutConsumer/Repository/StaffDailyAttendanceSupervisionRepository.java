@@ -19,7 +19,7 @@ public interface StaffDailyAttendanceSupervisionRepository extends JpaRepository
             WHERE SAS.status <> 8 AND ST.status <> 8
             AND ST.school.id =:schoolId AND SAS.supervisionDate BETWEEN :termStartDate AND :termEndDate
             """)
-    List<StaffDailyAttendanceSupervision> allByTerm_School(LocalDate termStartDate , LocalDate termEndDate ,String schoolId );
+    List<StaffDailyAttendanceSupervision> allByTermDates_School(LocalDate termStartDate , LocalDate termEndDate ,String schoolId );
 
 //    @Query("""
 //            SELECT SAS FROM StaffDailyAttendanceSupervision AS SAS
