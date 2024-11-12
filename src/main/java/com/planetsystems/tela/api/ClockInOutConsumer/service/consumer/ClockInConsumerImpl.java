@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -40,7 +41,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ClockInConsumerImpl {
 
-    private final JmsTemplate jmsTemplate;
     private final ClockInRepository clockInRepository;
     private final ClockOutRepository clockOutRepository;
     private final SchoolRepository schoolRepository;
@@ -51,7 +51,7 @@ public class ClockInConsumerImpl {
 
 
 
-    @JmsListener(destination = "${queue.clockins}" , containerFactory = "queueConnectionFactory")
+    @JmsListener(destination = "${queue.clockins}")
     @Transactional
     public void subscribeClockIns(String clockInsStr) throws JsonProcessingException {
         log.info("subscribeClockIns1");
@@ -87,23 +87,58 @@ public class ClockInConsumerImpl {
                         return dto;
                     }).collect(Collectors.toList());
 
+            Optional<ClockInDTO> clockInDTOOptional = dtoList.parallelStream().findAny();
+
+
             /// existing
-            List<ClockInDTO> existingSavedClockInDTOS = dtoList.parallelStream()
-                    .filter(dto -> (dto.getId() != null  && !dto.getId().isEmpty()))
-                    .map(dto -> {
-                        LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
-                        Optional<ClockIn> optionalClockIn = clockInRepository.clockInByDate_Staff(clockInDateTime.toLocalDate(), dto.getStaffId());
-                        if (optionalClockIn.isPresent()) {
-                            // todo compare clockin times
-                            ClockIn clock = optionalClockIn.get();
-                            boolean after = clock.getClockInTime().isAfter(clockInDateTime.toLocalTime());
-                            if (after){
-                                clock.setClockInTime(clockInDateTime.toLocalTime());
-                                clockInRepository.save(clock);
+            List<ClockInDTO> existingSavedClockInDTOS = Collections.emptyList();
+            if (clockInDTOOptional.isPresent()) {
+                ClockInDTO clockInDTO = clockInDTOOptional.get();
+                LocalDateTime clockIDateTime = LocalDateTime.parse(clockInDTO.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
+                List<ClockIn> dateClockIns = clockInRepository.clockInByDate(clockIDateTime.toLocalDate());
+
+
+                existingSavedClockInDTOS = dateClockIns.parallelStream().flatMap(clockIn -> dtoList.parallelStream()
+                        .filter(dto -> clockIn.getSchoolStaff().getId().equals(dto.getStaffId()))
+                        .map(dto -> {
+                            LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
+                            Optional<ClockIn> optionalClockIn = clockInRepository.clockInByDate_Staff(clockInDateTime.toLocalDate(), dto.getStaffId());
+                            if (optionalClockIn.isPresent()) {
+                                // todo compare clockin times
+                                ClockIn clock = optionalClockIn.get();
+                                boolean after = clock.getClockInTime().isAfter(clockInDateTime.toLocalTime());
+                                if (after) {
+                                    clock.setClockInTime(clockInDateTime.toLocalTime());
+                                    clockInRepository.save(clock);
+                                }
                             }
-                        }
-                        return dto;
-                    }).toList();
+                            return dto;
+                        })).toList();
+
+
+//                List<ClockInDTO> existingSavedClockInDTOS = dtoList.parallelStream()
+//                        .filter(dto -> (dto.getId() != null  && !dto.getId().isEmpty()))
+//                        .map(dto -> {
+//                            LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
+//                            Optional<ClockIn> optionalClockIn = clockInRepository.clockInByDate_Staff(clockInDateTime.toLocalDate(), dto.getStaffId());
+//                            if (optionalClockIn.isPresent()) {
+//                                // todo compare clockin times
+//                                ClockIn clock = optionalClockIn.get();
+//                                boolean after = clock.getClockInTime().isAfter(clockInDateTime.toLocalTime());
+//                                if (after){
+//                                    clock.setClockInTime(clockInDateTime.toLocalTime());
+//                                    clockInRepository.save(clock);
+//                                }
+//                            }
+//                            return dto;
+//                        }).toList();
+
+            }
+
+
+
+
+
 
 
             newSavedClockInDTOS.addAll(existingSavedClockInDTOS);
@@ -115,7 +150,7 @@ public class ClockInConsumerImpl {
     }
 
 
-    @JmsListener(destination = "${queue.clockouts}" , containerFactory = "queueConnectionFactory")
+    @JmsListener(destination = "${queue.clockouts}" )
     @Transactional
     public void subscribeClockOuts(String clockOutsStr) throws JsonProcessingException {
         log.info("subscribeClockOuts1");
@@ -295,11 +330,38 @@ public class ClockInConsumerImpl {
 
 
 
-//    @JmsListener(destination = "8008226193412" , containerFactory = "topicConnectionFactory")
+    @JmsListener(destination = "8008229464166" , containerFactory = "topicConnectionFactory")
+    @Transactional
+    public void subscribeSchoolClockIn(String clockInString) throws JsonProcessingException {
+
+        log.info("8008226193412 subscribeSchoolClockIn 1  {} ", clockInString);
+
+
+    }
+
+    @JmsListener(destination = "8008229464166" , containerFactory = "topicConnectionFactory")
+    @Transactional
+    public void subscribeSchoolClockIn2(String clockInString) throws JsonProcessingException {
+
+        log.info("8008226193412 subscribeSchoolClockIn 1  {} ", clockInString);
+
+
+    }
+
+//    @JmsListener(destination = "8008229464166" , containerFactory = "topicConnectionFactory")
 //    @Transactional
-//    public void subscribeSchoolClockIn(String clockInString) throws JsonProcessingException {
+//    public void subscribeSchoolClockIn2(String clockInString) throws JsonProcessingException {
 //
-//        log.info("8008226193412 subscribeSchoolClockIn 1  {} ", clockInString);
+//        log.info("8008226193412 subscribeSchoolClockIn2 1  {} ", clockInString);
+//
+//
+//    }
+//
+//    @JmsListener(destination = "8008229464166" , containerFactory = "topicConnectionFactory")
+//    @Transactional
+//    public void subscribeSchoolClockIn3(String clockInString) throws JsonProcessingException {
+//
+//        log.info("8008226193412 subscribeSchoolClockIn2 1  {} ", clockInString);
 //
 //
 //    }
