@@ -689,7 +689,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
         log.info("School {} ", academicTerm);
         List<StaffDailyAttendanceSupervision> staffDailyAttendanceSupervisions;
         if ("all".equalsIgnoreCase(dateParam) || dateParam == null) {
-            staffDailyAttendanceSupervisions = staffDailyAttendanceSupervisionRepository.allByTerm_School(academicTerm.getStartDate(), academicTerm.getEndDate(), school.getId());
+            staffDailyAttendanceSupervisions = staffDailyAttendanceSupervisionRepository.allByTermDates_School(academicTerm.getStartDate(), academicTerm.getEndDate(), school.getId());
         } else {
             LocalDate localDate = LocalDate.parse(dateParam, TelaDatePattern.datePattern);
             staffDailyAttendanceSupervisions = staffDailyAttendanceSupervisionRepository.allByDate_School(localDate, school.getId());
@@ -916,7 +916,7 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
 
         List<StaffDailyAttendanceTaskSupervisionDTO> staffDailyAttendanceTaskSupervisionDTOS;
         if ("all".equalsIgnoreCase(dateParam) || dateParam == null) {
-            List<StaffDailyAttendanceSupervision> termStaffDailyAttendanceSupervisions = staffDailyAttendanceSupervisionRepository.allByTerm_School(academicTerm.getStartDate(), academicTerm.getEndDate(), school.getId());
+            List<StaffDailyAttendanceSupervision> termStaffDailyAttendanceSupervisions = staffDailyAttendanceSupervisionRepository.allByTermDates_School(academicTerm.getStartDate(), academicTerm.getEndDate(), school.getId());
             List<StaffDailyAttendanceTaskSupervision> termStaffDailyAttendanceTaskSupervisions = staffDailyAttendanceTaskSupervisionRepository.allIn(termStaffDailyAttendanceSupervisions);
 
 
