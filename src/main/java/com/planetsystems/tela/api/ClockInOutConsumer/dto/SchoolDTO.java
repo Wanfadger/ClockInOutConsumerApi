@@ -11,6 +11,7 @@ import java.io.Serializable;
 @Builder
 @ToString
 public class SchoolDTO implements Serializable {
+    private String id;
     private String telaSchoolNumber;
     private String phoneNumber;
     private String name;
