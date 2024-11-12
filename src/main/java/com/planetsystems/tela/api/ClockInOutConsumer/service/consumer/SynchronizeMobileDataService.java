@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.Map;
 
+@Deprecated(forRemoval = true)
 public interface SynchronizeMobileDataService {
 
     void publishSchoolData(School school , AcademicTerm academicTerm);

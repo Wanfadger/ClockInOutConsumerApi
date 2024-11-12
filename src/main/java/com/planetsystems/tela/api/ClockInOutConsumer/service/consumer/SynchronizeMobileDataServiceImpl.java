@@ -38,6 +38,7 @@ import java.util.stream.IntStream;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Deprecated(forRemoval = true)
 public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataService {
     private final SchoolRepository schoolRepository;
     private final AcademicTermRepository academicTermRepository;
