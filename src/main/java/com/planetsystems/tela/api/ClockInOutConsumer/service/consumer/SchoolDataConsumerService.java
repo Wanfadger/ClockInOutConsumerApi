@@ -4,6 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.jms.Message;
 
 public interface SchoolDataConsumerService {
+
+    public void subscribeClockOuts(String clockOutsStr) throws JsonProcessingException;
+    public void subscribeClockIns(String clockInsStr) throws JsonProcessingException;
     void subscribeLearnerHeadCounts(String learnerHeadCountStr , Message message) throws JsonProcessingException;
 
     void subscribeClassAttendances(String classAttendanceStr, Message message) throws JsonProcessingException;
