@@ -79,6 +79,14 @@ public interface ClockInRepository extends JpaRepository<ClockIn, String> {
             """)
     Optional<ClockIn> clockInByDate_Staff(LocalDate clockInDate, String staffId);
 
+
+    @Query(value = """
+            SELECT CL FROM ClockIns AS CL
+            WHERE CL.status <> 8
+            AND CL.clockInDate =:clockInDate
+            """)
+    List<ClockIn> clockInByDate(LocalDate clockInDate);
+
 //
 //    @EntityGraph(attributePaths = "{schoolStaff.generalUserDetail}" , type = EntityGraph.EntityGraphType.FETCH)
 //    List<ClockIn> findAllByStatusNotAndClockInDateAndSchool_Id(Status status , LocalDate localDate , String schoolId);
