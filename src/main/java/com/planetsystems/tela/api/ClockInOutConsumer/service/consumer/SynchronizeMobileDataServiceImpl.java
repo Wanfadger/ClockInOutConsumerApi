@@ -63,8 +63,8 @@ public class SynchronizeMobileDataServiceImpl implements SynchronizeMobileDataSe
     final ObjectMapper objectMapper;
 
 
-    @JmsListener(destination = "${queue.synchronizeMobileData}" )
-    @Transactional
+//    @JmsListener(destination = "${queue.synchronizeMobileData}" )
+//    @Transactional
     public void synchronizeMobileData(@NonNull Map<String, String> queryParam , Message message) {
         log.info("synchronizeMobileData  {}"  , queryParam);
         log.info("message  {}"  , message);
