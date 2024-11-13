@@ -13,6 +13,7 @@ import com.planetsystems.tela.api.ClockInOutConsumer.dto.timetable.UpdateTimeTab
 import com.planetsystems.tela.api.ClockInOutConsumer.exception.TelaNotFoundException;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.*;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.*;
+import com.planetsystems.tela.api.ClockInOutConsumer.service.cache.CacheEvictService;
 import com.planetsystems.tela.api.ClockInOutConsumer.utils.TelaDatePattern;
 import com.planetsystems.tela.api.ClockInOutConsumer.utils.publisher.QueueTopicPublisher;
 import com.planetsystems.tela.api.ClockInOutConsumer.utils.publisher.TelaQueueNames;
@@ -61,13 +62,14 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
 
 //    final JmsTemplate jmsTemplate;
     private final QueueTopicPublisher queueTopicPublisher;
+    final CacheEvictService cacheEvictService;
 
 
 
     @JmsListener(destination = "${queue.clockins}")
     @Transactional
     public void subscribeClockIns(String clockInsStr) throws JsonProcessingException {
-        log.info("subscribeClockIns1");
+        log.info("subscribeClockIns");
         List<ClockInDTO> dtoList = objectMapper.readValue(clockInsStr, new TypeReference<>() {
         });
 
@@ -128,78 +130,20 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
                             return dto;
                         })).toList();
 
-
-//                List<ClockInDTO> existingSavedClockInDTOS = dtoList.parallelStream()
-//                        .filter(dto -> (dto.getId() != null  && !dto.getId().isEmpty()))
-//                        .map(dto -> {
-//                            LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
-//                            Optional<ClockIn> optionalClockIn = clockInRepository.clockInByDate_Staff(clockInDateTime.toLocalDate(), dto.getStaffId());
-//                            if (optionalClockIn.isPresent()) {
-//                                // todo compare clockin times
-//                                ClockIn clock = optionalClockIn.get();
-//                                boolean after = clock.getClockInTime().isAfter(clockInDateTime.toLocalTime());
-//                                if (after){
-//                                    clock.setClockInTime(clockInDateTime.toLocalTime());
-//                                    clockInRepository.save(clock);
-//                                }
-//                            }
-//                            return dto;
-//                        }).toList();
-
             }
-
-
-
-
-
-
 
             newSavedClockInDTOS.addAll(existingSavedClockInDTOS);
 
-            publishSchoolClockIns(firstDTO.getTelaSchoolNumber() , newSavedClockInDTOS);
-
-        }
-
-    }
-
-
-    @Async
-    public void publishSchoolClockIns(String telaSchoolNumber ,  List<ClockInDTO> dtoList) {
-        try {
-//            jmsTemplate.setPubSubDomain(true);
-//            jmsTemplate.setConnectionFactory(topicConnectionFactory);
-//            jmsTemplate.setSessionAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
             MQResponseDto<List<ClockInDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.CLOCKINS);
-            responseDto.setData(dtoList);
-//            jmsTemplate.convertAndSend(telaSchoolNumber, objectMapper.writeValueAsString(responseDto));
+            responseDto.setData(newSavedClockInDTOS);
 
+            queueTopicPublisher.publishTopicData(firstDTO.getTelaSchoolNumber() , objectMapper.writeValueAsString(responseDto));
 
-            queueTopicPublisher.publishTopicData(telaSchoolNumber , objectMapper.writeValueAsString(responseDto));
+            log.info("PUBLISHED SAVE UPDATED CLOCKINS FOR {} {} " , firstDTO.getTelaSchoolNumber() , dtoList.size());
 
-            log.info("PUBLISHED SAVE UPDATED CLOCKINS FOR {} {} " , telaSchoolNumber , dtoList.size());
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println(e);
         }
-    }
 
-
-    @Async
-    public void publishSchoolClockOuts(String telaSchoolNumber ,  List<ClockOutDTO> dtoList) {
-        try {
-//            jmsTemplate.setPubSubDomain(true);
-//            jmsTemplate.setSessionAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
-            MQResponseDto<List<ClockOutDTO>> responseDto = new MQResponseDto<>();
-            responseDto.setResponseType(ResponseType.CLOCKOUTS);
-            responseDto.setData(dtoList);
-//            jmsTemplate.convertAndSend(telaSchoolNumber, objectMapper.writeValueAsString(responseDto));
-            queueTopicPublisher.publishTopicData(telaSchoolNumber , objectMapper.writeValueAsString(responseDto));
-            log.info("PUBLISHED SAVE UPDATED CLOCKOUTS FOR {} {} " , telaSchoolNumber , dtoList.size());
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println(e);
-        }
     }
 
 
@@ -261,47 +205,16 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
 
             newSavedClockOutDTOS.addAll(existingSavedClockOutDTOS);
 
-            publishSchoolClockOuts(firstDTO.getTelaSchoolNumber() , newSavedClockOutDTOS);
-
+            MQResponseDto<List<ClockOutDTO>> responseDto = new MQResponseDto<>();
+            responseDto.setResponseType(ResponseType.CLOCKOUTS);
+            responseDto.setData(newSavedClockOutDTOS);
+            queueTopicPublisher.publishTopicData(firstDTO.getTelaSchoolNumber() , objectMapper.writeValueAsString(responseDto));
+            log.info("PUBLISHED SAVE UPDATED CLOCKOUTS FOR {} {} " , firstDTO.getTelaSchoolNumber()  , dtoList.size());
+            cacheEvictService.evictSchoolTermClockIns(firstDTO.getTelaSchoolNumber() , firstDTO.getAcademicTermId());
 
             // todo publish to broker
             // todo evict school cache
-
         }
-
-
-
-
-
-
-
-
-
-
-//        dtoList.parallelStream().filter(dto -> {
-//            LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
-//            boolean alreadyExists = !clockInRepository.existsByStatusNotAndClockInDateAndSchoolStaff_Id(Status.DELETED, clockInDateTime.toLocalDate(), dto.getStaffId());
-//            if (alreadyExists){
-//                log.info("alreadyExists {} ", dto);
-//                publishSchoolClockIn(dto);
-//            }
-//            return alreadyExists;
-//        }).forEach(dto -> {
-//            LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
-//            Optional<IdProjection> optionalSchoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(dto.getTelaSchoolNumber() , Status.DELETED);
-//
-//            if (optionalSchoolIdProjection.isPresent()) {
-//                IdProjection schoolIdProjection = optionalSchoolIdProjection.get();
-//                ClockIn clockIn = toNewClockIn(dto, clockInDateTime, schoolIdProjection);
-//
-//                log.info("CLOCKIN TO BE SAVED {}  " , dto);
-//                log.info("TELA NO {}  " , dto.getTelaSchoolNumber());
-//
-//                ClockIn save = clockInRepository.save(clockIn);
-//                dto.setId(save.getId());
-//                publishSchoolClockIns( dto);
-//            }
-//        });
     }
 
 
