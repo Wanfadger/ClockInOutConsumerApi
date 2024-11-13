@@ -21,9 +21,9 @@ public class SchoolService {
     final SchoolRepository schoolRepository;
 
     public  ResponseEntity<SystemAppFeedBackDTO<SchoolDTO>> validateSchool(String telaSchoolNumber) {
-        IdProjection idProjection = schoolRepository.idByStatusAndTelaSchoolUID(Status.DELETED , telaSchoolNumber )
+        School school = schoolRepository.byTelaNumberOrDeviceNumber(Status.DELETED , telaSchoolNumber , telaSchoolNumber )
                 .orElseThrow(() -> new TelaNotFoundException("Theres no school associated with " + telaSchoolNumber));
-        School school = schoolRepository.findByStatusNotAndId(Status.DELETED, idProjection.getId()).orElseThrow(() -> new TelaNotFoundException("Theres no school associated with " + telaSchoolNumber));
+//        School school = schoolRepository.findByStatusNotAndId(Status.DELETED, idProjection.getId()).orElseThrow(() -> new TelaNotFoundException("Theres no school associated with " + telaSchoolNumber));
         District district = school.getDistrict();
         SchoolDTO dto  = SchoolDTO.builder()
                 .schoolOwnership(school.getSchoolOwnership().getSchoolOwnership())
