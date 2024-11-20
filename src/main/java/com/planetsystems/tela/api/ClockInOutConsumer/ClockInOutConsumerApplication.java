@@ -12,6 +12,7 @@ import com.planetsystems.tela.api.ClockInOutConsumer.exception.TelaNotFoundExcep
 import com.planetsystems.tela.api.ClockInOutConsumer.model.*;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.SchoolLevel;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.Status;
+import com.planetsystems.tela.api.ClockInOutConsumer.service.cache.CacheEvictService;
 import com.planetsystems.tela.api.ClockInOutConsumer.utils.Convertor;
 import com.planetsystems.tela.api.ClockInOutConsumer.utils.TelaDatePattern;
 import lombok.RequiredArgsConstructor;
@@ -36,10 +37,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @EnableCaching
 public class ClockInOutConsumerApplication implements CommandLineRunner {
-
+    private final CacheEvictService cacheEvictService;
 	private final SchoolRepository schoolRepository;
 	private final AcademicTermRepository academicTermRepository;
-	private final ClockInRepository clockInRepository;
 	private final ClockOutRepository clockOutRepository;
 	final SubjectRepository subjectRepository;
 	final LearnerEnrollmentRepository learnerEnrollmentRepository;
@@ -60,6 +60,11 @@ public class ClockInOutConsumerApplication implements CommandLineRunner {
 	@Override
 	@Transactional
 	public void run(String... args) throws Exception {
+		//school=,term=
+        String term = "8a8089b191dfdd700191dfe76bc80018";
+		String telaNumber = "8008229464166";
+
+		cacheEvictService.evictSchoolData(telaNumber);
 
 //		Optional<IdProjection> optionalSchoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot("8008222085089" , Status.DELETED);
 //		if (optionalSchoolIdProjection.isPresent()) {
@@ -231,11 +236,11 @@ public class ClockInOutConsumerApplication implements CommandLineRunner {
 
 	}
 
-	@JmsListener(destination = "8008225962439")
-	@Transactional
-	public void subscribeSchoolClockIn(String clockInString) throws JsonProcessingException {
-		log.info("SUBSCRIBING CLOCK INS");
-		log.info("subscribeSchoolClockIn {}", clockInString);
-
-	}
+//	@JmsListener(destination = "8008225962439")
+//	@Transactional
+//	public void subscribeSchoolClockIn(String clockInString) throws JsonProcessingException {
+//		log.info("SUBSCRIBING CLOCK INS");
+//		log.info("subscribeSchoolClockIn {}", clockInString);
+//
+//	}
 }
