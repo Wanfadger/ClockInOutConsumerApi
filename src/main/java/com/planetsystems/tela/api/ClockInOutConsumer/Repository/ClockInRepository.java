@@ -71,6 +71,14 @@ public interface ClockInRepository extends JpaRepository<ClockIn, String> {
                         """, nativeQuery = true)
     List<ClockInProjection> nativeAllByDate_School(LocalDate clockInDate, String schoolId);
 
+    @Query(value = """
+            select cl."id" as id ,cl."clockInDate" as clockInDate,cl."clockInTime" as clockInTime ,cl."clockedStatus" as clockedStatus,cl."clockinType" as clockinType ,cl."comment" as comment,
+            cl."createdDateTime" as createdDateTime,
+            cl."displacement" as displacement ,cl."latitude" as latitude,cl."longitude" as longitude,cl."schoolStaff_id" as staffId,cl."status" as status 
+            from "ClockIns" as  cl where cl."status"<>8 and cl."clockInDate"=:clockInDate and cl."schoolStaff_id"=:staffId
+                        """, nativeQuery = true)
+    Optional<ClockInProjection> nativeClockInByDate_Staff(LocalDate clockInDate, String staffId);
+
 
     @Query(value = """
             SELECT CL FROM ClockIns AS CL
