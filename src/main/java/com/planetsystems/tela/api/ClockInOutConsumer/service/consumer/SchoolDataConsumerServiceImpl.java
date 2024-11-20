@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.planetsystems.tela.api.ClockInOutConsumer.Repository.*;
+import com.planetsystems.tela.api.ClockInOutConsumer.Repository.projections.ClockInProjection;
 import com.planetsystems.tela.api.ClockInOutConsumer.Repository.projections.IdProjection;
 import com.planetsystems.tela.api.ClockInOutConsumer.dto.*;
 import com.planetsystems.tela.api.ClockInOutConsumer.dto.schoolData.SchoolDataPublishPayloadDTO;
@@ -76,6 +77,7 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
         Optional<ClockInDTO> firstOptional = dtoList.parallelStream().findFirst();
         if (firstOptional.isPresent()) {
             ClockInDTO firstDTO = firstOptional.get();
+            log.info("subscribeClockIns DATE {} " , firstDTO.getClockInDateTime());
 
             IdProjection idProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(firstDTO.getTelaSchoolNumber(), Status.DELETED).orElseThrow(() -> new TelaNotFoundException("School not found"));
 
@@ -84,15 +86,15 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
                     .filter(dto -> dto.getId().equals(null) || dto.getId().isEmpty())
                     .map(dto -> {
                         LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
-                        Optional<ClockIn> optionalClockIn = clockInRepository.clockInByDate_Staff(clockInDateTime.toLocalDate(), dto.getStaffId());
+                        Optional<ClockInProjection> optionalClockIn = clockInRepository.nativeClockInByDate_Staff(clockInDateTime.toLocalDate(), dto.getStaffId());
                         if (optionalClockIn.isPresent()) {
                             // todo compare clockin times
-                            ClockIn clock = optionalClockIn.get();
-                            boolean after = clock.getClockInTime().isAfter(clockInDateTime.toLocalTime());
-                            if (after){
-                                clock.setClockInTime(clockInDateTime.toLocalTime());
-                                clockInRepository.save(clock);
-                            }
+                            ClockInProjection clock = optionalClockIn.get();
+                           // boolean after = clock.getClockInTime().isAfter(clockInDateTime.toLocalTime());
+//                            if (after){
+//                                clock.setClockInTime(clockInDateTime.toLocalTime());
+//                                clockInRepository.save(clock);
+//                            }
                             dto.setId(clock.getId());
                         }else{
                             ClockIn clockIn = toNewClockIn(dto, clockInDateTime, idProjection);
@@ -105,32 +107,34 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
             Optional<ClockInDTO> clockInDTOOptional = dtoList.parallelStream().findAny();
 
 
+            // todo commented to manage the load of new recored first
+
             /// existing
             List<ClockInDTO> existingSavedClockInDTOS = Collections.emptyList();
-            if (clockInDTOOptional.isPresent()) {
-                ClockInDTO clockInDTO = clockInDTOOptional.get();
-                LocalDateTime clockIDateTime = LocalDateTime.parse(clockInDTO.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
-                List<ClockIn> dateClockIns = clockInRepository.clockInByDate(clockIDateTime.toLocalDate());
-
-
-                existingSavedClockInDTOS = dateClockIns.parallelStream().flatMap(clockIn -> dtoList.parallelStream()
-                        .filter(dto -> clockIn.getSchoolStaff().getId().equals(dto.getStaffId()))
-                        .map(dto -> {
-                            LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
-                            Optional<ClockIn> optionalClockIn = clockInRepository.clockInByDate_Staff(clockInDateTime.toLocalDate(), dto.getStaffId());
-                            if (optionalClockIn.isPresent()) {
-                                // todo compare clockin times
-                                ClockIn clock = optionalClockIn.get();
-                                boolean after = clock.getClockInTime().isAfter(clockInDateTime.toLocalTime());
-                                if (after) {
-                                    clock.setClockInTime(clockInDateTime.toLocalTime());
-                                    clockInRepository.save(clock);
-                                }
-                            }
-                            return dto;
-                        })).toList();
-
-            }
+//            if (clockInDTOOptional.isPresent()) {
+//                ClockInDTO clockInDTO = clockInDTOOptional.get();
+//                LocalDateTime clockIDateTime = LocalDateTime.parse(clockInDTO.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
+//                List<ClockInProjection> dateClockIns = clockInRepository.nativeAllByDate_School(clockIDateTime.toLocalDate() ,idProjection.getId() );
+//
+//
+//                existingSavedClockInDTOS = dateClockIns.parallelStream().flatMap(clockIn -> dtoList.parallelStream()
+//                        .filter(dto -> clockIn.getStaffId().equals(dto.getStaffId()))
+//                        .map(dto -> {
+//                            LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
+//                            Optional<ClockInProjection> optionalClockIn = clockInRepository.nativeClockInByDate_Staff(clockInDateTime.toLocalDate(), dto.getStaffId());
+//                            if (optionalClockIn.isPresent()) {
+//                                // todo compare clockin times
+////                                ClockInProjection clock = optionalClockIn.get();
+////                                boolean after = clock.getClockInTime().isAfter(clockInDateTime.toLocalTime());
+////                                if (after) {
+////                                    clock.setClockInTime(clockInDateTime.toLocalTime());
+////                                    clockInRepository.save(clock);
+////                                }
+//                            }
+//                            return dto;
+//                        })).toList();
+//
+//            }
 
             newSavedClockInDTOS.addAll(existingSavedClockInDTOS);
 
@@ -139,7 +143,7 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
             responseDto.setData(newSavedClockInDTOS);
 
             queueTopicPublisher.publishTopicData(firstDTO.getTelaSchoolNumber() , objectMapper.writeValueAsString(responseDto));
-
+           // cacheEvictService.evictSchoolTermClockIns(firstDTO.getTelaSchoolNumber() , firstDTO.getAcademicTermId());
             log.info("PUBLISHED SAVE UPDATED CLOCKINS FOR {} {} " , firstDTO.getTelaSchoolNumber() , dtoList.size());
 
         }
@@ -184,23 +188,26 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
                     }).collect(Collectors.toList());
 
 
+            // todo commented to manage the load of new records first
+
             /// existing
-            List<ClockOutDTO> existingSavedClockOutDTOS = dtoList.parallelStream()
-                    .filter(dto -> (dto.getId() != null  && !dto.getId().isEmpty()))
-                    .map(dto -> {
-                        LocalDateTime clockOutDateTime = LocalDateTime.parse(dto.getClockOutDateTime(), TelaDatePattern.dateTimePattern24);
-                        Optional<ClockOut> optionalClockOut = clockOutRepository.clockOutByDate_Staff(clockOutDateTime.toLocalDate(), dto.getStaffId());
-                        if (optionalClockOut.isPresent()) {
-                            // todo compare clockin times
-                            ClockOut clockOut = optionalClockOut.get();
-                            boolean after = clockOut.getClockOutTime().isAfter(clockOutDateTime.toLocalTime());
-                            if (after){
-                                clockOut.setClockOutTime(clockOutDateTime.toLocalTime());
-                                clockOutRepository.save(clockOut);
-                            }
-                        }
-                        return dto;
-                    }).toList();
+            List<ClockOutDTO> existingSavedClockOutDTOS = Collections.emptyList();
+//                    dtoList.parallelStream()
+//                    .filter(dto -> (dto.getId() != null  && !dto.getId().isEmpty()))
+//                    .map(dto -> {
+//                        LocalDateTime clockOutDateTime = LocalDateTime.parse(dto.getClockOutDateTime(), TelaDatePattern.dateTimePattern24);
+//                        Optional<ClockOut> optionalClockOut = clockOutRepository.clockOutByDate_Staff(clockOutDateTime.toLocalDate(), dto.getStaffId());
+//                        if (optionalClockOut.isPresent()) {
+//                            // todo compare clockin times
+//                            ClockOut clockOut = optionalClockOut.get();
+//                            boolean after = clockOut.getClockOutTime().isAfter(clockOutDateTime.toLocalTime());
+//                            if (after){
+//                                clockOut.setClockOutTime(clockOutDateTime.toLocalTime());
+//                                clockOutRepository.save(clockOut);
+//                            }
+//                        }
+//                        return dto;
+//                    }).toList();
 
 
             newSavedClockOutDTOS.addAll(existingSavedClockOutDTOS);
@@ -210,7 +217,7 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
             responseDto.setData(newSavedClockOutDTOS);
             queueTopicPublisher.publishTopicData(firstDTO.getTelaSchoolNumber() , objectMapper.writeValueAsString(responseDto));
             log.info("PUBLISHED SAVE UPDATED CLOCKOUTS FOR {} {} " , firstDTO.getTelaSchoolNumber()  , dtoList.size());
-            cacheEvictService.evictSchoolTermClockIns(firstDTO.getTelaSchoolNumber() , firstDTO.getAcademicTermId());
+            //cacheEvictService.evictSchoolTermClockOuts(firstDTO.getTelaSchoolNumber() , firstDTO.getAcademicTermId());
 
             // todo publish to broker
             // todo evict school cache
@@ -258,7 +265,7 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
         });
 
         List<LearnerHeadCountDTO> allLearnerHeadCountDTOS =  publishPayloadDTO.getData();
-        log.info("ddd {} " , allLearnerHeadCountDTOS);
+//        log.info("ddd {} " , allLearnerHeadCountDTOS);
 
         AcademicTerm academicTerm = academicTermRepository.findById(publishPayloadDTO.getAcademicTerm()).orElseThrow(() -> new TelaNotFoundException("Term " + publishPayloadDTO.getAcademicTerm() + " not found"));
 
@@ -352,8 +359,9 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
                 responseDto.setData(allLearnerHeadCountDTOS);
 //                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
                 queueTopicPublisher.publishTopicData(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+                cacheEvictService.evictLearnerEnrollments(publishPayloadDTO.getSchoolTelaNumber() , publishPayloadDTO.getAcademicTerm());
                 log.info("PUBLISHED SAVE UPDATED LEARNER_HEADCOUNTS  for {} {} {} ",academicTerm.getTerm(), idProjection.getId() ,  allLearnerHeadCountDTOS.size());
-                queueTopicPublisher.deleteMessageFromQueue(TelaQueueNames.LearnerHeadCounts , message);
+//                queueTopicPublisher.deleteMessageFromQueue(TelaQueueNames.LearnerHeadCounts , message);
             } catch (Exception e) {
                 e.printStackTrace();
                 System.out.println(e);
@@ -485,6 +493,7 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
                 responseDto.setData(allClassAttendanceDTOS);
 //                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
                 queueTopicPublisher.publishTopicData(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+                cacheEvictService.evictLearnerAttendance(publishPayloadDTO.getSchoolTelaNumber() , publishPayloadDTO.getAcademicTerm());
                 log.info("PUBLISHED SAVE UPDATED LEARNER_ATTENDANCES  for {} {} {} ",academicTerm.getTerm(), idProjection.getId() ,  allClassAttendanceDTOS.size());
             } catch (Exception e) {
                 e.printStackTrace();
@@ -573,6 +582,7 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
                 responseDto.setData(allSavedNewClassDTOS);
 //                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
                 queueTopicPublisher.publishTopicData(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+                cacheEvictService.evictSchoolClasses(publishPayloadDTO.getSchoolTelaNumber() , publishPayloadDTO.getAcademicTerm());
                 log.info("PUBLISHED SAVE UPDATED CLASSES  for {} {} {} ",academicTerm.getTerm(), idProjection.getId() ,  allSavedNewClassDTOS.size());
             } catch (Exception e) {
                 e.printStackTrace();
@@ -684,6 +694,7 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
                 responseDto.setData(allSavedNewStaffDTOS);
 //                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
                 queueTopicPublisher.publishTopicData(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+                cacheEvictService.evictSchoolStaffs(publishPayloadDTO.getSchoolTelaNumber() , publishPayloadDTO.getAcademicTerm());
                 log.info("PUBLISHED SAVE UPDATED STAFFS  for {} {} {} ",academicTerm.getTerm(), idProjection.getId() ,  allSavedNewStaffDTOS.size());
             }
 
@@ -769,6 +780,7 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
                 responseDto.setData(allSavedNewDailyTimeAttendanceDTOS);
 //                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
                 queueTopicPublisher.publishTopicData(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+                cacheEvictService.evictStaffDailyTimeAttendanceSupervision(publishPayloadDTO.getSchoolTelaNumber() , publishPayloadDTO.getAcademicTerm());
                 log.info("PUBLISHED SAVE UPDATED STAFF_DAILY_TIME_ATTENDANCES  for {} {} {} ",academicTerm.getTerm(), idProjection.getId() ,  allSavedNewDailyTimeAttendanceDTOS.size());
             }
 
@@ -816,6 +828,7 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
                 responseDto.setData(allUpdateTimeTableLessonDTOS);
 //                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
                 queueTopicPublisher.publishTopicData(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+                cacheEvictService.evictSchoolTimetables(publishPayloadDTO.getSchoolTelaNumber() , publishPayloadDTO.getAcademicTerm());
                 log.info("PUBLISHED SAVE UPDATED UPDATE_TIMETABLE_LESSONS  for {} {} {} ",academicTerm.getTerm(), idProjection.getId() ,  allUpdateTimeTableLessonDTOS.size());
             }
 
@@ -923,6 +936,7 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
                 responseDto.setData(allSavedNewStaffDailyTimetableDTOS);
 //                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
                 queueTopicPublisher.publishTopicData(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+                cacheEvictService.evictStaffDailyTimetables(publishPayloadDTO.getSchoolTelaNumber() , publishPayloadDTO.getAcademicTerm());
                 log.info("PUBLISHED SAVE UPDATED STAFF_DAILY_TIMETABLES  for {} {} {} ",academicTerm.getTerm(), idProjection.getId() ,  allSavedNewStaffDailyTimetableDTOS.size());
             }
 
@@ -1000,6 +1014,7 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
                 responseDto.setData(allSavedNewStaffDailyAttendanceTaskSupervisionDTOS);
 //                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
                 queueTopicPublisher.publishTopicData(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+                cacheEvictService.evictStaffDailyTimetableTaskSupervision(publishPayloadDTO.getSchoolTelaNumber() , publishPayloadDTO.getAcademicTerm());
                 log.info("PUBLISHED SAVE UPDATED STAFF_DAILY_TASK_SUPERVISIONS  for {} {} {} ",academicTerm.getTerm(), idProjection.getId() ,  allSavedNewStaffDailyAttendanceTaskSupervisionDTOS.size());
             }
 
@@ -1053,6 +1068,7 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
 //                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
 
                 queueTopicPublisher.publishTopicData(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
+//                cacheEvictService.evictStaffDailyTimetableTaskSupervision(publishPayloadDTO.getSchoolTelaNumber() , publishPayloadDTO.getAcademicTerm());
                 log.info("PUBLISHED SAVE UPDATED SCHOOL_COORDINATES  for {} {} {} ",publishPayloadDTO.getAcademicTerm(), idProjection.getId() ,  schoolCoordinateDTO);
             }
 
