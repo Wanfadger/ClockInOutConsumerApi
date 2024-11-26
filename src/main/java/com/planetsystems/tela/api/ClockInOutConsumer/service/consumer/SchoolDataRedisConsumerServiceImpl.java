@@ -15,6 +15,7 @@ import com.planetsystems.tela.api.ClockInOutConsumer.exception.TelaNotFoundExcep
 import com.planetsystems.tela.api.ClockInOutConsumer.model.*;
 import com.planetsystems.tela.api.ClockInOutConsumer.model.enums.*;
 import com.planetsystems.tela.api.ClockInOutConsumer.service.cache.CacheEvictService;
+import com.planetsystems.tela.api.ClockInOutConsumer.service.cache.CacheService;
 import com.planetsystems.tela.api.ClockInOutConsumer.utils.TelaDatePattern;
 import com.planetsystems.tela.api.ClockInOutConsumer.utils.publisher.QueueTopicPublisher;
 import jakarta.jms.Message;
@@ -61,7 +62,7 @@ public class SchoolDataRedisConsumerServiceImpl implements SchoolDataConsumerSer
 //    final JmsTemplate jmsTemplate;
     private final QueueTopicPublisher queueTopicPublisher;
     final CacheEvictService cacheEvictService;
-
+    final CacheService cacheService;
 
 
 
@@ -76,39 +77,49 @@ public class SchoolDataRedisConsumerServiceImpl implements SchoolDataConsumerSer
         if (firstOptional.isPresent()) {
             ClockInDTO firstDTO = firstOptional.get();
             log.info("subscribeClockIns DATE {} " , firstDTO.getClockInDateTime());
+            String academicTermId = firstDTO.getAcademicTermId();
+            String telaSchoolNumber = firstDTO.getTelaSchoolNumber();
 
-            IdProjection idProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(firstDTO.getTelaSchoolNumber(), Status.DELETED).orElseThrow(() -> new TelaNotFoundException("School not found"));
+            SchoolDTO schoolDTO = cacheService.cacheSchoolData(telaSchoolNumber);
+            List<ClockInDTO> existingTermClockInDTOS = cacheService.cacheSchoolTermClockIns(schoolDTO);
+
+            // todo filter our new clockins from the list
+
+//            IdProjection idProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot(telaSchoolNumber, Status.DELETED).orElseThrow(() -> new TelaNotFoundException("School not found"));
 
             // new
             List<ClockInDTO> newSavedClockInDTOS = dtoList.parallelStream()
                     .filter(dto -> dto.getId().equals(null) || dto.getId().isEmpty())
                     .map(dto -> {
                         LocalDateTime clockInDateTime = LocalDateTime.parse(dto.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
-                        Optional<ClockInProjection> optionalClockIn = clockInRepository.nativeClockInByDate_Staff(clockInDateTime.toLocalDate(), dto.getStaffId());
+                        Optional<ClockInDTO> optionalClockIn = existingTermClockInDTOS.parallelStream().filter(existing -> {
+                            LocalDateTime existingDateTime = LocalDateTime.parse(existing.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
+                            return existing.getStaffId().equals(dto.getStaffId()) && existingDateTime.toLocalDate().equals(clockInDateTime.toLocalDate());
+                        }).findAny();
                         if (optionalClockIn.isPresent()) {
                             // todo compare clockin times
-                            ClockInProjection clock = optionalClockIn.get();
-                           // boolean after = clock.getClockInTime().isAfter(clockInDateTime.toLocalTime());
+                            ClockInDTO clockInDTO = optionalClockIn.get();
+                            // boolean after = clock.getClockInTime().isAfter(clockInDateTime.toLocalTime());
 //                            if (after){
 //                                clock.setClockInTime(clockInDateTime.toLocalTime());
 //                                clockInRepository.save(clock);
 //                            }
-                            dto.setId(clock.getId());
+                            dto.setId(clockInDTO.getId());
                         }else{
-                            ClockIn clockIn = toNewClockIn(dto, clockInDateTime, idProjection);
+                            ClockIn clockIn = toNewClockIn(dto, clockInDateTime, schoolDTO.getId());
                             ClockIn save = clockInRepository.save(clockIn);
                             dto.setId(save.getId());
                         }
                         return dto;
                     }).collect(Collectors.toList());
 
-            Optional<ClockInDTO> clockInDTOOptional = dtoList.parallelStream().findAny();
+//            Optional<ClockInDTO> clockInDTOOptional = dtoList.parallelStream().findAny();
 
 
             // todo commented to manage the load of new recored first
 
             /// existing
-            List<ClockInDTO> existingSavedClockInDTOS = Collections.emptyList();
+//            List<ClockInDTO> existingSavedClockInDTOS = Collections.emptyList();
 //            if (clockInDTOOptional.isPresent()) {
 //                ClockInDTO clockInDTO = clockInDTOOptional.get();
 //                LocalDateTime clockIDateTime = LocalDateTime.parse(clockInDTO.getClockInDateTime(), TelaDatePattern.dateTimePattern24);
@@ -134,15 +145,18 @@ public class SchoolDataRedisConsumerServiceImpl implements SchoolDataConsumerSer
 //
 //            }
 
-            newSavedClockInDTOS.addAll(existingSavedClockInDTOS);
+//            newSavedClockInDTOS.addAll(existingSavedClockInDTOS);
+
+            // todo clear cache
+            // update cache with new list
 
             MQResponseDto<List<ClockInDTO>> responseDto = new MQResponseDto<>();
             responseDto.setResponseType(ResponseType.CLOCKINS);
             responseDto.setData(newSavedClockInDTOS);
 
-            queueTopicPublisher.publishTopicData(firstDTO.getTelaSchoolNumber() , objectMapper.writeValueAsString(responseDto));
-            cacheEvictService.evictSchoolTermClockIns(firstDTO.getTelaSchoolNumber() , firstDTO.getAcademicTermId());
-            log.info("PUBLISHED SAVE UPDATED CLOCKINS FOR {} {} " , firstDTO.getTelaSchoolNumber() , dtoList.size());
+            queueTopicPublisher.publishTopicData(telaSchoolNumber, objectMapper.writeValueAsString(responseDto));
+            cacheEvictService.evictSchoolTermClockIns(telaSchoolNumber, academicTermId);
+            log.info("PUBLISHED SAVE UPDATED CLOCKINS FOR {} {} " , telaSchoolNumber, dtoList.size());
 
         }
 
@@ -223,13 +237,13 @@ public class SchoolDataRedisConsumerServiceImpl implements SchoolDataConsumerSer
     }
 
 
-    private  ClockIn toNewClockIn(ClockInDTO dto, LocalDateTime clockInDateTime, IdProjection schoolIdProjection) {
+    private  ClockIn toNewClockIn(ClockInDTO dto, LocalDateTime clockInDateTime, String schoolId) {
         return ClockIn.builder()
                 .clockedStatus(ClockedStatus.CLOCKED_IN)
                 .clockInDate(clockInDateTime.toLocalDate())
                 .clockInTime(clockInDateTime.toLocalTime())
                 .academicTerm(new AcademicTerm(dto.getAcademicTermId()))
-                .school(new School(schoolIdProjection.getId()))
+                .school(new School(schoolId))
                 .schoolStaff(new SchoolStaff(dto.getStaffId()))
                 .comment("")
                 .clockinType(dto.getClockInType())
