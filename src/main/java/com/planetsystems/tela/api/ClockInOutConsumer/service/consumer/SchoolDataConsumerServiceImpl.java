@@ -143,7 +143,7 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
             responseDto.setData(newSavedClockInDTOS);
 
             queueTopicPublisher.publishTopicData(firstDTO.getTelaSchoolNumber() , objectMapper.writeValueAsString(responseDto));
-           // cacheEvictService.evictSchoolTermClockIns(firstDTO.getTelaSchoolNumber() , firstDTO.getAcademicTermId());
+            cacheEvictService.evictSchoolTermClockIns(firstDTO.getTelaSchoolNumber() , firstDTO.getAcademicTermId());
             log.info("PUBLISHED SAVE UPDATED CLOCKINS FOR {} {} " , firstDTO.getTelaSchoolNumber() , dtoList.size());
 
         }
@@ -217,7 +217,7 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
             responseDto.setData(newSavedClockOutDTOS);
             queueTopicPublisher.publishTopicData(firstDTO.getTelaSchoolNumber() , objectMapper.writeValueAsString(responseDto));
             log.info("PUBLISHED SAVE UPDATED CLOCKOUTS FOR {} {} " , firstDTO.getTelaSchoolNumber()  , dtoList.size());
-            //cacheEvictService.evictSchoolTermClockOuts(firstDTO.getTelaSchoolNumber() , firstDTO.getAcademicTermId());
+            cacheEvictService.evictSchoolTermClockOuts(firstDTO.getTelaSchoolNumber() , firstDTO.getAcademicTermId());
 
             // todo publish to broker
             // todo evict school cache
@@ -1068,7 +1068,7 @@ public class SchoolDataConsumerServiceImpl implements SchoolDataConsumerService{
 //                jmsTemplate.convertAndSend(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
 
                 queueTopicPublisher.publishTopicData(publishPayloadDTO.getSchoolTelaNumber(), objectMapper.writeValueAsString(responseDto));
-//                cacheEvictService.evictStaffDailyTimetableTaskSupervision(publishPayloadDTO.getSchoolTelaNumber() , publishPayloadDTO.getAcademicTerm());
+                cacheEvictService.evictStaffDailyTimetableTaskSupervision(publishPayloadDTO.getSchoolTelaNumber() , publishPayloadDTO.getAcademicTerm());
                 log.info("PUBLISHED SAVE UPDATED SCHOOL_COORDINATES  for {} {} {} ",publishPayloadDTO.getAcademicTerm(), idProjection.getId() ,  schoolCoordinateDTO);
             }
 
