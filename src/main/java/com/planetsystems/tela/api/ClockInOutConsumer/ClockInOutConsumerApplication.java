@@ -37,21 +37,21 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @EnableCaching
 public class ClockInOutConsumerApplication implements CommandLineRunner {
-    private final CacheEvictService cacheEvictService;
-	private final SchoolRepository schoolRepository;
-	private final AcademicTermRepository academicTermRepository;
-	private final ClockOutRepository clockOutRepository;
-	final SubjectRepository subjectRepository;
-	final LearnerEnrollmentRepository learnerEnrollmentRepository;
-	final SNLearnerEnrollmentRepository snLearnerEnrollmentRepository;
-	final LearnerAttendanceRepository learnerAttendanceRepository;
-	final SNLearnerAttendanceRepository snLearnerAttendanceRepository;
-	final TimeTableLessonRepository timeTableLessonRepository;
-	final TimeTableRepository timeTableRepository;
-	final StaffDailyTimeTableRepository staffDailyTimeTableRepository;
-	final StaffDailyTimeTableLessonRepository staffDailyTimeTableLessonRepository;
-	final StaffDailyAttendanceSupervisionRepository staffDailyAttendanceSupervisionRepository;
-	final StaffDailyAttendanceTaskSupervisionRepository staffDailyAttendanceTaskSupervisionRepository;
+//    private final CacheEvictService cacheEvictService;
+//	private final SchoolRepository schoolRepository;
+//	private final AcademicTermRepository academicTermRepository;
+//	private final ClockOutRepository clockOutRepository;
+//	final SubjectRepository subjectRepository;
+//	final LearnerEnrollmentRepository learnerEnrollmentRepository;
+//	final SNLearnerEnrollmentRepository snLearnerEnrollmentRepository;
+//	final LearnerAttendanceRepository learnerAttendanceRepository;
+//	final SNLearnerAttendanceRepository snLearnerAttendanceRepository;
+//	final TimeTableLessonRepository timeTableLessonRepository;
+//	final TimeTableRepository timeTableRepository;
+//	final StaffDailyTimeTableRepository staffDailyTimeTableRepository;
+//	final StaffDailyTimeTableLessonRepository staffDailyTimeTableLessonRepository;
+//	final StaffDailyAttendanceSupervisionRepository staffDailyAttendanceSupervisionRepository;
+//	final StaffDailyAttendanceTaskSupervisionRepository staffDailyAttendanceTaskSupervisionRepository;
 	public static void main(String[] args) {
 		SpringApplication.run(ClockInOutConsumerApplication.class, args);
 
@@ -60,11 +60,15 @@ public class ClockInOutConsumerApplication implements CommandLineRunner {
 	@Override
 	@Transactional
 	public void run(String... args) throws Exception {
-		//school=,term=
-        String term = "8a8089b191dfdd700191dfe76bc80018";
-		String telaNumber = "8008229464166";
-
-		cacheEvictService.evictSchoolData(telaNumber);
+		//MQResponseDto(ResponseType=SCHOOL, data=SchoolDTO(id=2c9a808b8b46eead018b51cb73d4002f, telaSchoolNumber=8008227371101, phoneNumber=8008227371101, name=DES PRIMARY SCHOOL,
+		// district=IdNameDTO[id=2c9a80838711dfe5018712cf296100a4, name=Nakawa Division], academicTerm=AcademicTermDTO(id=8a8089b191dfdd700191dfe76bc80018, name=Term 3, startDate=16/09/2024,
+		// endDate=06/12/2024, year=2024), regNo=null, schoolLevel=Primary, schoolOwnership=Government, schoolType=null, licensed=true, licenseKey=null,
+		// geoCoordinate=GeoCoordinateDTO(id=8a80891c8f1905cd018f19784817317d, latitude=0.3277913, longitude=32.6128246, geoFenceActivated=false, pinClockActivated=false, maxDisplacement=1500.0)))
+//        String term = "8a8089b191dfdd700191dfe76bc80018";
+//		String telaNumber = "8008227371101";
+//
+//		cacheEvictService.evictSchoolData(telaNumber);
+//		cacheEvictService.evictDistricts();
 
 //		Optional<IdProjection> optionalSchoolIdProjection = schoolRepository.findByTelaSchoolUIDAndStatusNot("8008222085089" , Status.DELETED);
 //		if (optionalSchoolIdProjection.isPresent()) {
