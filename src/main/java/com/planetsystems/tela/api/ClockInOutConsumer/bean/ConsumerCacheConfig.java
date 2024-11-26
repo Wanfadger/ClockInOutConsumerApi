@@ -11,6 +11,7 @@ import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
 
@@ -26,20 +27,24 @@ public class ConsumerCacheConfig {
     @Bean
     public JedisConnectionFactory jedisConnectionFactory(){
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(host, port);
-        return new JedisConnectionFactory(config);
+        JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory(config);
+        return jedisConnectionFactory;
     }
 
 
-
-
-
     @Bean
-    public RedisTemplate< String , Object> redisTemplate(RedisConnectionFactory redisConnectionFactory){
-        GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer();
+    public RedisTemplate< String , Object> redisTemplate(JedisConnectionFactory redisConnectionFactory){
+        StringRedisSerializer stringRedisSerializer = new StringRedisSerializer();
+        GenericJackson2JsonRedisSerializer jackson2JsonRedisSerializer = new GenericJackson2JsonRedisSerializer();
         RedisTemplate< String , Object> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory);
         redisTemplate.setEnableTransactionSupport(true);
-        redisTemplate.setDefaultSerializer(serializer);
+
+        redisTemplate.setKeySerializer(stringRedisSerializer);
+        redisTemplate.setValueSerializer(jackson2JsonRedisSerializer);
+
+        redisTemplate.setHashKeySerializer(stringRedisSerializer);
+        redisTemplate.setHashValueSerializer(jackson2JsonRedisSerializer);
 
         return redisTemplate;
     }
@@ -49,61 +54,74 @@ public class ConsumerCacheConfig {
 
     @Bean
     @Primary
-    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+    public RedisCacheManager cacheManager() {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig() //
-                .prefixCacheNameWith(this.getClass().getPackageName() + ".") //
+//                .prefixCacheNameWith(this.getClass().getPackageName() + ".") //
                 .disableCachingNullValues();
 
-        return RedisCacheManager.builder(connectionFactory) //
+        return RedisCacheManager.builder(jedisConnectionFactory()) //
+                .cacheDefaults(config) //
+                .build();
+
+    }
+
+    @Bean("halfHourCacheManager")
+    public RedisCacheManager halfHourCacheManager() {
+        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig() //
+//                .prefixCacheNameWith(this.getClass().getPackageName() + ".") //
+                .entryTtl(Duration.ofMinutes(30)) //
+                .disableCachingNullValues();
+
+        return RedisCacheManager.builder(jedisConnectionFactory()) //
                 .cacheDefaults(config) //
                 .build();
     }
 
     @Bean("hourCacheManager")
-    public RedisCacheManager hourCacheManager(RedisConnectionFactory connectionFactory) {
+    public RedisCacheManager hourCacheManager() {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig() //
-                .prefixCacheNameWith(this.getClass().getPackageName() + ".") //
+//                .prefixCacheNameWith(this.getClass().getPackageName() + ".") //
                 .entryTtl(Duration.ofHours(1)) //
                 .disableCachingNullValues();
 
-        return RedisCacheManager.builder(connectionFactory) //
+        return RedisCacheManager.builder(jedisConnectionFactory()) //
                 .cacheDefaults(config) //
                 .build();
     }
 
     @Bean("_24HourCacheManager")
-    public RedisCacheManager _24HourCacheManager(RedisConnectionFactory connectionFactory) {
+    public RedisCacheManager _24HourCacheManager() {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig() //
-                .prefixCacheNameWith(this.getClass().getPackageName() + ".") //
+//                .prefixCacheNameWith(this.getClass().getPackageName() + ".") //
                 .entryTtl(Duration.ofHours(1*24)) //
                 .disableCachingNullValues();
 
-        return RedisCacheManager.builder(connectionFactory) //
+        return RedisCacheManager.builder(jedisConnectionFactory()) //
                 .cacheDefaults(config) //
                 .build();
     }
 
     @Bean("weekCacheManager")
-    public RedisCacheManager weekCacheManager(RedisConnectionFactory connectionFactory) {
+    public RedisCacheManager weekCacheManager() {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig() //
-                .prefixCacheNameWith(this.getClass().getPackageName() + ".") //
+//                .prefixCacheNameWith(this.getClass().getPackageName() + ".") //
                 .entryTtl(Duration.ofDays(7)) //
                 .disableCachingNullValues();
 
-        return RedisCacheManager.builder(connectionFactory) //
+        return RedisCacheManager.builder(jedisConnectionFactory()) //
                 .cacheDefaults(config) //
                 .build();
     }
 
 
     @Bean("monthCacheManager")
-    public RedisCacheManager monthCacheManager(RedisConnectionFactory connectionFactory) {
+    public RedisCacheManager monthCacheManager() {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig() //
-                .prefixCacheNameWith(this.getClass().getPackageName() + ".") //
+//                .prefixCacheNameWith(this.getClass().getPackageName() + ".") //
                 .entryTtl(Duration.ofDays(30)) //
                 .disableCachingNullValues();
 
-        return RedisCacheManager.builder(connectionFactory) //
+        return RedisCacheManager.builder(jedisConnectionFactory()) //
                 .cacheDefaults(config) //
                 .build();
     }
