@@ -13,17 +13,18 @@ public interface CacheService {
 
     AcademicTermDTO cacheActiveAcademicTerm();
     SchoolDTO cacheSchoolData(String telaSchoolNumber);
-    MQResponseDto<List<ClassDTO>> cacheSchoolClasses(SchoolDTO schoolDTO);
-    MQResponseDto<List<StaffDTO>> cacheSchoolStaffs(SchoolDTO schoolDTO);
-    MQResponseDto<List<ClockInDTO>> cacheSchoolTermClockIns(SchoolDTO schoolDTO);
-    MQResponseDto<List<ClockOutDTO>> cacheSchoolTermClockOuts(SchoolDTO schoolDTO);
-    MQResponseDto<List<IdNameCodeDTO>> cacheSubjects(SchoolDTO schoolDT);
-    MQResponseDto<List<LearnerHeadCountDTO>> cacheLearnerEnrollments(SchoolDTO schoolDTO);
-    MQResponseDto<List<LearnerAttendanceDTO>> cacheLearnerAttendance(SchoolDTO schoolDTO);
-    MQResponseDto<List<StaffDailyTimeAttendanceDTO>> cacheStaffDailyTimeAttendanceSupervision(SchoolDTO schoolDTO, String dateParam);
-    MQResponseDto<List<StaffDailyAttendanceTaskSupervisionDTO>> cacheStaffDailyTimetableTaskSupervision(SchoolDTO schoolDTO , String dateParam);
+    List<ClassDTO> cacheSchoolClasses(SchoolDTO schoolDTO);
+    List<StaffDTO> cacheSchoolStaffs(SchoolDTO schoolDTO);
+    List<ClockInDTO> cacheSchoolTermClockIns(SchoolDTO schoolDTO);
+    List<ClockOutDTO> cacheSchoolTermClockOuts(SchoolDTO schoolDTO);
+    List<IdNameCodeDTO> cacheSubjects(SchoolDTO schoolDT);
+    List<LearnerHeadCountDTO> cacheLearnerEnrollments(SchoolDTO schoolDTO);
+    List<LearnerAttendanceDTO> cacheLearnerAttendance(SchoolDTO schoolDTO);
+    List<StaffDailyTimeAttendanceDTO> cacheStaffDailyTimeAttendanceSupervision(SchoolDTO schoolDTO, String dateParam);
+    List<StaffDailyAttendanceTaskSupervisionDTO> cacheStaffDailyTimetableTaskSupervision(SchoolDTO schoolDTO , String dateParam);
 
-    MQResponseDto<List<StaffDailyTimetableDTO>> cacheStaffDailyTimetables(SchoolDTO schoolDTO);
-    MQResponseDto<List<DistrictDTO>> cacheDistricts();
-    MQResponseDto<TimetableDTO> cacheSchoolTimetables(SchoolDTO schoolDTO);
+    List<StaffDailyTimetableDTO> cacheStaffDailyTimetables(SchoolDTO schoolDTO);
+    List<DistrictDTO> cacheDistricts();
+
+    TimetableDTO cacheSchoolTimetables(SchoolDTO schoolDTO);
 }
